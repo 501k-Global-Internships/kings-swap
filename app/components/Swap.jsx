@@ -1,15 +1,57 @@
+'use client'
 import Image from "next/image";
-import Coin from '../assets/coin.svg'
+import Coin from "../assets/coin.svg";
+import { useEffect, useState } from "react";
 
 const Swap = () => {
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsAnimating((prev) => !prev);
+    }, 6000); // Total animation cycle: 6s
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="bg-white text-blue-600 p-4 md:p-8">
-      <div className="flex justify-center space-x-8 mb-8">
-        <span>Recieve</span>
-        <span className="text-blue-600 text-4xl">•</span>
-        <span>Swap</span>
-        <span className="text-blue-600 text-4xl">•</span>
-        <span>Repeat</span>
+      <div className="flex justify-center items-center py-10 mb-8 relative overflow-hidden">
+        <div
+          className={`flex items-center transition-all duration-1000 ease-in-out absolute
+            ${
+              isAnimating
+                ? "opacity-0 -translate-x-full"
+                : "opacity-100 translate-x-0"
+            }`}
+        >
+          <span className="text-xl font-bold whitespace-nowrap">Recieve</span>
+          <span
+            className="text-blue-600 text-6xl leading-none ml-8"
+            style={{ marginTop: "-8px" }}
+          >
+            •
+          </span>
+        </div>
+
+        <span className="text-xl font-bold z-10">Swap</span>
+
+        <div
+          className={`flex items-center transition-all duration-1000 ease-in-out absolute right-0
+            ${
+              isAnimating
+                ? "opacity-0 translate-x-full"
+                : "opacity-100 translate-x-0"
+            }`}
+        >
+          <span
+            className="text-blue-600 text-6xl leading-none mr-8"
+            style={{ marginTop: "-8px" }}
+          >
+            •
+          </span>
+          <span className="text-xl font-bold whitespace-nowrap">Repeat</span>
+        </div>
       </div>
 
       <div className="bg-blue-600 rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center">

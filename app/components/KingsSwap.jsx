@@ -1,37 +1,32 @@
-import Image from "next/image";
-import Img1 from '../assets/curve-1.svg';
-import Img2 from '../assets/curve-2.svg';
+import bgImage from "../assets/swap-bg.svg";
 
 const KingsSwap = () => {
   return (
-    <div className="relative w-full h-40 md:h-56 bg-blue-600 overflow-hidden">
-      {/* First curved background */}
-      <div className="absolute inset-0">
-        <Image
-          src={Img1}
-          alt="Background curve 1"
-          layout="fill"
-          objectFit="cover"
-        />
-      </div>
-
-      {/* Second curved background */}
-      <div className="absolute inset-0">
-        <Image
-          src={Img2}
-          alt="Background curve 2"
-          layout="fill"
-          objectFit="cover"
-        />
-      </div>
-
-      {/* Centered text */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <h1 className="text-white text-3xl md:text-5xl font-bold z-10">
-          KINGS SWAP
-        </h1>
-      </div>
-    </div>
+    <div
+      className="
+        relative 
+        w-full 
+        h-[200px]         /* Default height for mobile */
+        sm:h-[250px]      /* Small screens */
+        md:h-[300px]      /* Medium screens */
+        lg:h-[350px]      /* Large screens */
+        bg-blue-600 
+        bg-cover 
+        bg-center 
+        bg-no-repeat
+        mx-auto
+        px-2              /* Minimal horizontal padding for mobile */
+        sm:px-3           /* Small screens */
+        md:px-4           /* Medium screens */
+        lg:px-6           /* Large screens */
+        py-2              /* Minimal vertical padding for mobile */
+        sm:py-3           /* Small screens */
+        md:py-4           /* Medium screens */
+      "
+      style={{
+        backgroundImage: `url(${bgImage.src})`,
+      }}
+    />
   );
 };
 

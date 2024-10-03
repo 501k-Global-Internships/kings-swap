@@ -93,7 +93,7 @@ const LoginPage = () => {
           </p>
           <div className="mt-6">
             <p className="text-center mb-2">Or Login with</p>
-            <button className="w-full  py-2 flex items-center justify-center">
+            <Link href='/kingsChat' className="w-full  py-2 flex items-center justify-center">
               <Image
                 src={Img3}
                 alt="KingsChat"
@@ -101,7 +101,7 @@ const LoginPage = () => {
                 height={240}
                 className="mr-2"
               />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

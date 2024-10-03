@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Img from "../assets/centered-vector.svg";
-import Img1 from "../assets/signup-img.svg";
+import Img1 from "../assets/pic_picked.svg";
 import Img2 from "../assets/coin2.svg";
 import Img3 from "../assets/signup-img2.svg";
 import Logo from "../assets/vector-img.svg";
@@ -65,14 +64,6 @@ const ImageSlider = () => {
 
   return (
     <div className="w-full md:w-1/2 bg-gray-100 p-8 flex flex-col justify-center items-center relative">
-      <div className="absolute inset-0 flex justify-center items-center">
-        <Image
-          src={Img}
-          alt="Centered vector"
-          width={200}
-          height={200}
-        />
-      </div>
       <div className="relative z-10 text-center mb-8">
         <div className="overflow-hidden w-64 h-64 mx-auto mb-4">
           <div
