@@ -1,67 +1,94 @@
-// components/TransactionsTable.jsx
-import React from "react";
 
-const TransactionRow = ({ date, amount, description, status }) => (
-  <tr className="border-t border-gray-100">
-    <td className="py-3">{date}</td>
-    <td
-      className={`py-3 ${
-        status === "Failed" ? "text-red-500" : "text-green-500"
-      }`}
-    >
-      {amount}
-    </td>
-    <td className="py-3">{description}</td>
-    <td
-      className={`py-3 ${
-        status === "Failed" ? "text-red-500" : "text-green-500"
-      }`}
-    >
-      {status}
-    </td>
-  </tr>
+
+const TableHeader = ({ children }) => (
+  <div className="text-sm text-gray-600 font-medium">{children}</div>
 );
 
-const TransactionsTable = () => (
-  <div className="bg-white rounded-[1.5rem] p-6 shadow-sm">
-    <h2 className="text-lg font-semibold mb-4">Recent transactions</h2>
-    <table className="w-full">
-      <thead>
-        <tr className="text-gray-500 text-sm">
-          <th className="text-left pb-2">Date</th>
-          <th className="text-left pb-2">Amount</th>
-          <th className="text-left pb-2">Description</th>
-          <th className="text-left pb-2">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <TransactionRow
-          date="12-may-24"
-          amount="₦ 5,000"
-          description="Paid through bank -t"
-          status="success"
-        />
-        <TransactionRow
-          date="06-Apr-24"
-          amount="₦ 3,400"
-          description="Paid through e-wallet"
-          status="Failed"
-        />
-        <TransactionRow
-          date="03-Apr-24"
-          amount="₦ 7,400"
-          description="Paid through e-wallet"
-          status="Failed"
-        />
-        <TransactionRow
-          date="19-Dec-23"
-          amount="₦ 10,000"
-          description="Paid through bank -t"
-          status="success"
-        />
-      </tbody>
-    </table>
-  </div>
-);
+const TransactionTable = () => {
+  const transactions = [
+    {
+      date: "12-may-24",
+      amount: "₦ 5,000",
+      description: "Paid through bank -t",
+      status: "success",
+    },
+    {
+      date: "06-Apr-24",
+      amount: "₦ 3,400",
+      description: "Paid through e-wallet",
+      status: "Failed",
+    },
+    {
+      date: "03-Apr-24",
+      amount: "₦ 7,400",
+      description: "Paid through e-wallet",
+      status: "Failed",
+    },
+    {
+      date: "19-Dec-23",
+      amount: "₦ 10,000",
+      description: "Paid through bank -t",
+      status: "success",
+    },
+    {
+      date: "19-Dec-23",
+      amount: "₦ 1,000",
+      description: "Paid through bank -t",
+      status: "success",
+    },
+    {
+      date: "03-Dec-23",
+      amount: "₦ 7,400",
+      description: "Paid through e-wallet",
+      status: "Failed",
+    },
+    {
+      date: "20-Nov-23",
+      amount: "₦ 1,000",
+      description: "Paid through bank -t",
+      status: "success",
+    },
+  ];
 
-export default TransactionsTable;
+  return (
+    <div className="bg-white rounded-xl shadow-sm">
+      <div className="grid grid-cols-4 gap-4 p-4 border-b border-gray-200">
+        <TableHeader>Date</TableHeader>
+        <TableHeader>Amount</TableHeader>
+        <TableHeader>Description</TableHeader>
+        <TableHeader>Status</TableHeader>
+      </div>
+      <div className="divide-y divide-gray-100">
+        {transactions.map((transaction, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-4 gap-4 p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div className="text-gray-900">{transaction.date}</div>
+            <div
+              className={`${
+                transaction.status === "Failed"
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
+            >
+              {transaction.amount}
+            </div>
+            <div className="text-gray-700">{transaction.description}</div>
+            <div
+              className={`${
+                transaction.status === "Failed"
+                  ? "text-red-500"
+                  : "text-green-500"
+              }`}
+            >
+              {transaction.status}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default TransactionTable;
