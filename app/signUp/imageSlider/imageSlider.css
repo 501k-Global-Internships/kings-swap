@@ -1,0 +1,30 @@
+@keyframes elasticBounce {
+  0% {
+    transform: translateX(0); /* Start at the original position */
+  }
+  15% {
+    transform: translateX(-200px); /* Stretch to the left */
+  }
+  30% {
+    transform: translateX(185px); /* Stretch to the right */
+  }
+  45% {
+    transform: translateX(-40px); /* Slight overshoot back to the left */
+  }
+  60% {
+    transform: translateX(40px); /* Slight overshoot back to the right */
+  }
+  75% {
+    transform: translateX(-10px); /* Smaller movement left */
+  }
+  90% {
+    transform: translateX(10px); /* Smaller movement right */
+  }
+  100% {
+    transform: translateX(0); /* Back to the original position */
+  }
+}
+
+.bounce {
+  animation: elasticBounce 1.5s ease-in-out; /* Stronger elastic bounce effect */
+}

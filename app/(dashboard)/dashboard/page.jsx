@@ -11,10 +11,10 @@ const Dashboard = () => {
         <Sidebar />
       </div>
       <MobileMenu />
-      <div className="lg:ml-64 flex-1">
-        <Navbar />
-        <div className="mt-[87px]">
-          {" "}
+      <div className="lg:ml-64 flex-1 flex flex-col">
+        <Navbar className="pl-16 lg:pl-0" />{" "}
+        {/* Added left padding for mobile */}
+        <div className="flex-1 overflow-y-auto mt-[87px]">
           <MainContent />
         </div>
       </div>

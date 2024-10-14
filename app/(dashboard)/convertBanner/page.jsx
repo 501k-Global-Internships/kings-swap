@@ -1,9 +1,9 @@
 
 import React from "react";
 import Image from "next/image";
-import Img from '../../assets/img-5.svg'
+import Img from '../../assets/convert-money.svg'
 const ConvertBanner = () => (
-  <div className="relative h-[20rem]">
+  <div className="relative h-[17rem]">
     <Image
       src={Img}
       alt="Convert money"

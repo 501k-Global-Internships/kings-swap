@@ -1,11 +1,54 @@
+// File: components/TransactionTable.js
+import React from "react";
 
+const TableHeader = () => (
+  <div className="flex items-center p-3 mb-4 border border-gray-500 rounded-[1rem] text-sm text-gray-500">
+    <div className="flex-1">Date</div>
+    <div className="flex-1">Amount</div>
+    <div className="flex-1">Description</div>
+    <div className="flex-1 text-right">Status</div>
+  </div>
+);
 
-const TableHeader = ({ children }) => (
-  <div className="text-sm text-gray-600 font-medium">{children}</div>
+const TransactionRow = ({ transaction }) => (
+  <div className="flex items-center py-3 text-sm">
+    <div className="flex-1">{transaction.date}</div>
+    <div
+      className={`flex-1 ${
+        transaction.status.toLowerCase() === "failed"
+          ? "text-red-500"
+          : "text-green-500"
+      }`}
+    >
+      {transaction.amount}
+    </div>
+    <div className="flex-1">{transaction.description}</div>
+    <div
+      className={`flex-1 text-right ${
+        transaction.status.toLowerCase() === "failed"
+          ? "text-red-500"
+          : "text-green-500"
+      }`}
+    >
+      {transaction.status}
+    </div>
+  </div>
 );
 
 const TransactionTable = () => {
   const transactions = [
+    {
+      date: "12-may-24",
+      amount: "₦ 5,000",
+      description: "Paid through bank -t",
+      status: "success",
+    },
+    {
+      date: "12-may-24",
+      amount: "₦ 5,000",
+      description: "Paid through bank -t",
+      status: "success",
+    },
     {
       date: "12-may-24",
       amount: "₦ 5,000",
@@ -43,48 +86,25 @@ const TransactionTable = () => {
       status: "Failed",
     },
     {
-      date: "20-Nov-23",
-      amount: "₦ 1,000",
-      description: "Paid through bank -t",
-      status: "success",
+      date: "03-Dec-23",
+      amount: "₦ 7,400",
+      description: "Paid through e-wallet",
+      status: "Failed",
+    },
+    {
+      date: "03-Dec-23",
+      amount: "₦ 7,400",
+      description: "Paid through e-wallet",
+      status: "Failed",
     },
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm">
-      <div className="grid grid-cols-4 gap-4 p-4 border-b border-gray-200">
-        <TableHeader>Date</TableHeader>
-        <TableHeader>Amount</TableHeader>
-        <TableHeader>Description</TableHeader>
-        <TableHeader>Status</TableHeader>
-      </div>
-      <div className="divide-y divide-gray-100">
+    <div className="bg-white rounded-2xl p-6 shadow-sm">
+      <TableHeader />
+      <div className="space-y-1">
         {transactions.map((transaction, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-4 gap-4 p-4 hover:bg-gray-50 transition-colors"
-          >
-            <div className="text-gray-900">{transaction.date}</div>
-            <div
-              className={`${
-                transaction.status === "Failed"
-                  ? "text-red-500"
-                  : "text-green-500"
-              }`}
-            >
-              {transaction.amount}
-            </div>
-            <div className="text-gray-700">{transaction.description}</div>
-            <div
-              className={`${
-                transaction.status === "Failed"
-                  ? "text-red-500"
-                  : "text-green-500"
-              }`}
-            >
-              {transaction.status}
-            </div>
-          </div>
+          <TransactionRow key={index} transaction={transaction} />
         ))}
       </div>
     </div>

@@ -158,9 +158,9 @@ const KingsChat = () => {
             </div>
             <div className="mt-6">
               <p className="text-left text-[#2F92E5]">First-time User?</p>
-              <button className="w-full mt-2 border text-white bg-[#2F92E5] p-2 rounded-md hover:bg-blue-300 transition-colors">
+              <Link href='/signUp' className="w-full mt-2 border text-white bg-[#2F92E5] p-2 rounded-md hover:bg-blue-300 transition-colors">
                 Sign up
-              </button>
+              </Link>
             </div>
           </div>
         </div>

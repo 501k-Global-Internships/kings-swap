@@ -12,7 +12,7 @@ const SwapCard = () => (
     <p className="text-sm text-gray-600 mb-4">
       YOU WILL RECEIVE <span className="text-green-500">₦50,000</span>
     </p>
-    <button className="w-full bg-red-500 text-white py-3 rounded-lg flex justify-center items-center space-x-2">
+    <button className="w-[10rem] bg-red-500 text-white py-3 rounded-lg flex justify-center items-center space-x-2">
       <span>Swap</span>
       <Image src={Img} alt="Swap" width={20} height={20} />
     </button>
