@@ -146,9 +146,9 @@ const LoginPage = () => {
             </p>
             <Link
               href="/kingsChat"
-              className="w-full py-2 flex items-center justify-center "
+              className="w-full py-2 flex items-center justify-center border border-gray-300 rounded"
             >
-              <Image src={Img3} alt="KingsChat" width={300} height={200} />
+              <Image src={Img3} alt="KingsChat" width={120} height={24} />
             </Link>
           </div>
         </div>

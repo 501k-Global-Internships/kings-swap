@@ -3,7 +3,6 @@
 import Image from "next/image";
 import SwapImg from "../assets/swap.svg";
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
 
 const Swap = () => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -25,11 +24,45 @@ const Swap = () => {
 
   return (
     <div className="bg-white text-blue-600 p-4 md:p-8">
-      {/* Existing animation code */}
       <div className="flex justify-center items-center py-10 mb-8 relative overflow-hidden">
-        {/* ... (keep the existing animation code here) ... */}
-      </div>
+        <div className="relative w-full max-w-md flex justify-center items-center">
+          <div
+            className={`flex items-center transition-all duration-1000 ease-in-out absolute left-0
+              ${
+                isAnimating
+                  ? "opacity-0 -translate-x-full"
+                  : "opacity-100 translate-x-0"
+              }`}
+          >
+            <span className="text-xl font-bold whitespace-nowrap">Recieve</span>
+            <span
+              className="text-blue-600 text-6xl leading-none ml-8"
+              style={{ marginTop: "-8px" }}
+            >
+              •
+            </span>
+          </div>
 
+          <span className="text-xl font-bold z-10">Swap</span>
+
+          <div
+            className={`flex items-center transition-all duration-1000 ease-in-out absolute right-0
+              ${
+                isAnimating
+                  ? "opacity-0 translate-x-full"
+                  : "opacity-100 translate-x-0"
+              }`}
+          >
+            <span
+              className="text-blue-600 text-6xl leading-none mr-8"
+              style={{ marginTop: "-8px" }}
+            >
+              •
+            </span>
+            <span className="text-xl font-bold whitespace-nowrap">Repeat</span>
+          </div>
+        </div>
+      </div>
       <div
         className="w-full h-auto min-h-[180px] sm:min-h-[280px] md:min-h-[380px] relative overflow-hidden
                     px-1 pt-2 pb-1
@@ -47,17 +80,14 @@ const Swap = () => {
             priority
           />
           <div
-            className={`absolute inset-x-0 bottom-0 mb-4 sm:mb-6 md:mb-8 lg:mb-10 flex justify-center transition-all duration-1000 ${
+            className={`absolute inset-[.9rem] mt-[25rem] flex items-center justify-center transition-all duration-1000 ${
               showButton
                 ? "translate-y-0 opacity-100"
                 : "translate-y-full opacity-0"
             }`}
           >
-            <button className="bg-blue-600 text-white text-sm sm:text-base px-4 py-1 sm:px-5 sm:py-2 rounded-full border-2 border-white hover:bg-blue-700 transition-colors flex items-center">
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-full border-2 border-white hover:bg-blue-700 transition-colors">
               Swap now
-              <span className="ml-2 bg-white rounded-full p-1">
-                <ArrowRight size={16} className="text-blue-600" />
-              </span>
             </button>
           </div>
         </div>

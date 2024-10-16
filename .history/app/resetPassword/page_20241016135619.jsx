@@ -16,7 +16,7 @@ const ResetPassword = () => {
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 " />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/50 to-blue-900/50" />
         <div className="relative z-10 flex flex-col justify-end h-full p-12 text-white">
           <h2 className="text-4xl font-bold mb-2">Swap Espees quickier!</h2>
           <p className="text-sm opacity-90">

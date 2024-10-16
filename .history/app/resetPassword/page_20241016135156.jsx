@@ -1,38 +1,36 @@
 import React from "react";
-import bgImg from "../assets/forget-bgImg.svg";
 import Link from "next/link";
 import Image from "next/image";
-import Img2 from "../assets/vector-img.svg";
 
 const ResetPassword = () => {
   return (
     <div className="flex flex-col md:flex-row h-screen">
-      {/* Left section with background image */}
-      <div
-        className="relative w-full md:w-1/2 overflow-hidden"
-        style={{
-          backgroundImage: `url(${bgImg.src})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 " />
+      {/* Left section with background */}
+      <div className="relative w-full md:w-1/2 bg-[#1D5EFF]">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-900" />
         <div className="relative z-10 flex flex-col justify-end h-full p-12 text-white">
           <h2 className="text-4xl font-bold mb-2">Swap Espees quickier!</h2>
           <p className="text-sm opacity-90">
             One account to keep and exchange your espees
           </p>
           <div className="flex items-center mt-4">
-            <Image
-              src={Img2}
-              alt="Kings Swap"
-              width={24}
-              height={24}
-              className="object-contain"
-            />
-            <span className="ml-2 text-sm font-medium tracking-wide">
-              KINGS SWAP
-            </span>
+            {/* Replace with actual logo SVG */}
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="ml-2 text-sm font-medium">KINGS SWAP</span>
           </div>
         </div>
       </div>
@@ -52,9 +50,10 @@ const ResetPassword = () => {
                 <input
                   type="email"
                   placeholder="Enter your email address"
-                  className="w-full px-4 py-3 rounded-lg focus:outline-none text-gray-700"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none"
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  {/* Email icon */}
                   <svg
                     width="20"
                     height="20"

@@ -21,18 +21,11 @@ const NewPassword = () => {
           <p className="text-sm mb-8">
             One account to keep and exchange your espees
           </p>
-          <div className="flex items-center mt-4">
-            <Image
-              src={Img2}
-              alt="Kings Swap"
-              width={24}
-              height={24}
-              className="object-contain"
-            />
-            <span className="ml-2 text-sm font-medium tracking-wide">
-              KINGS SWAP
-            </span>
-          </div>
+          <Image
+            src={Img2}
+            alt="Kings Swap"
+            className="w-24 h-auto"
+          />
         </div>
       </div>
 

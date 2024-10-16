@@ -9,14 +9,14 @@ const ResetPassword = () => {
     <div className="flex flex-col md:flex-row h-screen">
       {/* Left section with background image */}
       <div
-        className="relative w-full md:w-1/2 overflow-hidden"
+        className="relative w-full md:w-1/2 bg-[#1D5EFF] overflow-hidden"
         style={{
           backgroundImage: `url(${bgImg.src})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 " />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/50 to-blue-900/50" />
         <div className="relative z-10 flex flex-col justify-end h-full p-12 text-white">
           <h2 className="text-4xl font-bold mb-2">Swap Espees quickier!</h2>
           <p className="text-sm opacity-90">

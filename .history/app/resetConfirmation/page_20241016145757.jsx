@@ -19,11 +19,11 @@ const ResetConfirmation = () => {
           style={{ backgroundImage: `url(${bgImage.src})` }}
         />
         <div className="relative z-10 flex flex-col justify-end h-full p-12 text-white">
-          <h2 className="text-4xl font-bold mb-2">Swap Espees faster!</h2>
-          <p className="text-sm mb-12 pl-12">
-            One account to keep and <br /> exchange your espees
-          </p>
-          <div className="flex pl-12 items-center mb-8">
+            <h2 className="text-4xl font-bold mb-2">Swap Espees faster!</h2>
+            <p className="text-sm mb-12 pl-12">
+              One account to keep and <br /> exchange your espees
+            </p>
+          <div className="flex items-center mb-8">
             <Image
               src={Img2}
               alt="Kings Swap"
@@ -31,7 +31,7 @@ const ResetConfirmation = () => {
               height={28}
               className="object-contain"
             />
-            <span className="ml-3 text-sm font-medium tracking-wider uppercase">
+            <span className=" text-sm font-medium tracking-wider uppercase">
               Kings Swap
             </span>
           </div>
@@ -43,7 +43,7 @@ const ResetConfirmation = () => {
           <h1 className="text-2xl font-semibold text-gray-800 mb-8">
             Reset your password
           </h1>
-          <div className="mb-6 bg-[#37BE1C] text-white py-4 px-4 rounded-lg text-center">
+          <div className="mb-6 bg-green-500 text-white py-4 px-4 rounded-lg text-center">
             Password changed successfully!
           </div>
           <Link
