@@ -25,51 +25,11 @@ const Swap = () => {
 
   return (
     <div className="bg-white text-blue-600 p-4 md:p-8">
-      {/* Animation section */}
+      {/* Existing animation code */}
       <div className="flex justify-center items-center py-10 mb-8 relative overflow-hidden">
-        <div className="relative w-full max-w-md flex justify-center items-center">
-          {/* 'Receive' animation */}
-          <div
-            className={`flex items-center transition-all duration-1000 ease-in-out absolute left-0
-              ${
-                isAnimating
-                  ? "opacity-0 -translate-x-full"
-                  : "opacity-100 translate-x-0"
-              }`}
-          >
-            <span className="text-xl font-bold whitespace-nowrap">Receive</span>
-            <span
-              className="text-blue-600 text-6xl leading-none ml-8"
-              style={{ marginTop: "-8px" }}
-            >
-              •
-            </span>
-          </div>
-
-          {/* 'Swap' text */}
-          <span className="text-xl font-bold z-10">Swap</span>
-
-          {/* 'Repeat' animation */}
-          <div
-            className={`flex items-center transition-all duration-1000 ease-in-out absolute right-0
-              ${
-                isAnimating
-                  ? "opacity-0 translate-x-full"
-                  : "opacity-100 translate-x-0"
-              }`}
-          >
-            <span
-              className="text-blue-600 text-6xl leading-none mr-8"
-              style={{ marginTop: "-8px" }}
-            >
-              •
-            </span>
-            <span className="text-xl font-bold whitespace-nowrap">Repeat</span>
-          </div>
-        </div>
+        {/* ... (keep the existing animation code here) ... */}
       </div>
 
-      {/* Image and Button section */}
       <div
         className="w-full h-auto min-h-[180px] sm:min-h-[280px] md:min-h-[380px] relative overflow-hidden
                     px-1 pt-2 pb-1
@@ -86,8 +46,6 @@ const Swap = () => {
             objectFit="contain"
             priority
           />
-
-          {/* Button with animation */}
           <div
             className={`absolute inset-x-0 bottom-0 mb-4 sm:mb-6 md:mb-8 lg:mb-10 flex justify-center transition-all duration-1000 ${
               showButton
