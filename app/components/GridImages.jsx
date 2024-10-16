@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Img1 from "../assets/img-1.svg";
 import Img2 from "../assets/img-2.svg";
-import Img3 from "../assets/life-get-better.svg";
+import Img3 from "../assets/life-got-better.svg";
 import Img4 from "../assets/img-4.svg";
 import Img5 from "../assets/img-5.svg";
 
@@ -41,11 +41,7 @@ const GridImages = () => {
             height={300}
             objectFit="cover"
           />
-          <div className="absolute inset-0 flex flex-col justify-center p-6">
-            <h2 className="text-white text-3xl md:text-4xl font-bold mb-2">
-              Life got better!
-            </h2>
-            <p className="text-white mb-4">Get your Espees changed now!</p>
+          <div className="absolute inset-[15rem] flex flex-col justify-center p-6">
             <button className="bg-white text-blue-600 px-6 py-2 rounded-full w-max">
               Get started
             </button>

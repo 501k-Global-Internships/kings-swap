@@ -40,7 +40,7 @@ const SignUpPage = () => {
                 <React.Fragment key={num}>
                   <div
                     className={`w-[.8rem] md:w-[.95rem] h-[.8rem] md:h-[.95rem] rounded-full flex items-center justify-center text-white font-bold ${
-                      step >= num ? "bg-blue-500" : "bg-gray-300"
+                      step >= num ? "bg-blue-500" : "bg-[#D9D9D9]"
                     }`}
                   >
                     {""}
@@ -57,21 +57,29 @@ const SignUpPage = () => {
             </div>
           </div>
         </div>
-
         {/* Form Steps Centered in the middle */}
         <div className="flex flex-col justify-center items-center w-full h-full p-8">
           {step === 1 && (
             <>
               <Step1Form onNext={() => setStep(2)} />
-              <p className="text-sm mt-2">
+              <p className="text-sm text-[#7F7F7F] mt-4">
                 Have an account?{" "}
-                <Link
-                  href="/loginPage"
-                  className="text-blue-500 hover:underline"
-                >
+                <Link href="/loginPage" className="text-[#434343] underline">
                   Sign in
                 </Link>
               </p>
+              <div className="mt-6 text-center w-full max-w-md">
+                <p className="text-sm text-[#434343] mb-2">Or signup with</p>
+                <button className="w-full py-2 flex items-center justify-center  transition-colors">
+                  <Image
+                    src={KingsChat}
+                    alt="KingsChat"
+                    width={300}
+                    height={124}
+                    className="mr-2"
+                  />
+                </button>
+              </div>
             </>
           )}
           {step === 2 && <Step2Form onNext={() => setStep(3)} />}
@@ -84,16 +92,6 @@ const SignUpPage = () => {
           )}
           {step === 4 && verificationComplete && <SuccessMessage />}
         </div>
-
-        {/* Signup option at the bottom (only on Step 1) */}
-        {step === 1 && (
-          <div className=" text-center">
-            <p className="text-sm text-gray-500 mb-2">Or signup with</p>
-            <Link href="/kingsChat" className="">
-              <Image src={KingsChat} alt="KingsChat" width={270} height={150} />
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );

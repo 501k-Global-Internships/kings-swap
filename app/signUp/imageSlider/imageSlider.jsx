@@ -50,7 +50,7 @@ const ImageSlider = () => {
         {images.map((_, index) => (
           <div
             key={index}
-            className="w-[8rem] h-1 bg-gray-200 rounded-full relative overflow-hidden"
+            className="w-[8rem] h-1 bg-[#D9D9D9] rounded-full relative overflow-hidden"
           >
             <div
               ref={index === currentImageIndex ? progressRef : null} // Apply ref to the active progress bar
@@ -77,8 +77,10 @@ const ImageSlider = () => {
             ref={imageRef}
           />
         </div>
-        <h1 className="text-3xl font-bold mb-2">Swap Espees quicker!</h1>
-        <p className="text-center text-gray-600">
+        <h1 className="text-3xl text-[#14172A] font-bold mb-2">
+          Swap Espees quicker!
+        </h1>
+        <p className="text-center text-[#14172A]">
           One account to keep and exchange your espees
         </p>
       </div>
@@ -86,7 +88,9 @@ const ImageSlider = () => {
       {/* Footer with Logo */}
       <div className="flex items-center mt-auto">
         <Image src={Logo} alt="Logo" width={30} height={30} />
-        <span className="ml-2 text-sm text-gray-500">kings swap</span>
+        <span className="ml-2 text-xl font-bold text-[#CFCFD0]">
+          kings swap
+        </span>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Coin from "../assets/coin.svg";
+import SwapImg from "../assets/swap.svg";
 import { useEffect, useState } from "react";
 
 const Swap = () => {
@@ -56,48 +56,22 @@ const Swap = () => {
           </div>
         </div>
       </div>
-
-      <div className="bg-blue-600 rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center">
-        <div className="md:w-1/3 mb-6 md:mb-0">
+      <div
+        className="w-full h-auto min-h-[180px] sm:min-h-[280px] md:min-h-[380px] relative overflow-hidden 
+                    px-1 pt-2 pb-1 
+                    sm:px-2 sm:pt-3 sm:pb-2 
+                    md:px-4 md:pt-4 md:pb-3 
+                    lg:px-2 lg:pt-8 lg:pb-4
+                    flex items-center justify-center"
+      >
+        <div className="relative w-full h-full aspect-[3/1]">
           <Image
-            src={Coin}
-            alt="Coin"
-            width={200}
-            height={200}
-            className="mx-auto"
+            src={SwapImg}
+            alt="Swap Banner"
+            layout="fill"
+            objectFit="contain"
+            priority
           />
-        </div>
-
-        <div className="md:w-2/3 text-white">
-          <p className="text-sm mb-2">SWAP TO LOCAL CURRENCY</p>
-          <h2 className="text-3xl md:text-4xl font-bold mb-2">100%</h2>
-          <h3 className="text-2xl md:text-3xl font-bold mb-2">
-            Successful swaps
-          </h3>
-          <h3 className="text-2xl md:text-3xl font-bold mb-2">
-            Enjoy Convenience
-          </h3>
-          <h3 className="text-2xl md:text-3xl font-bold mb-4">
-            Swap without Limits.
-          </h3>
-          <p className="mb-4">Espees swap now, swift than ever before</p>
-          <button className="bg-white text-blue-600 px-6 py-2 rounded-full flex items-center">
-            Swap now
-            <svg
-              className="w-4 h-4 ml-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
         </div>
       </div>
     </div>

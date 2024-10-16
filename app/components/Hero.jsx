@@ -1,8 +1,7 @@
-
 import Image from "next/image";
 import Img from "../assets/Frame-animi.svg";
 import bgImg from "../assets/bgImg.svg";
-import Navbar from "./Navbar"; 
+import Navbar from "./Navbar";
 
 const Hero = () => {
   return (
@@ -30,7 +29,7 @@ const Hero = () => {
               Receive, send, exchange, and manage multiple currencies in one
               app.
             </p>
-            <button className="text-[#ffff] px-8 py-3 rounded-[1rem] border-[.1rem] border-[#ffff] font-bold hover:bg-opacity-90 transition-all">
+            <button className="text-[#ffff] px-8 py-3 rounded-[1rem] border-[.1rem] border-[#ffff] font-bold hover:bg-white hover:text-blue-600 transition-all duration-300">
               Click To Swap
             </button>
           </div>

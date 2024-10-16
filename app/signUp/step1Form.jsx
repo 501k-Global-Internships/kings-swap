@@ -15,7 +15,7 @@ const Step1Form = ({ onNext }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md mx-auto">
+    <div className="bg-[#FFFFFF] border-[#C8C8C8] rounded-lg shadow-2xl p-6 w-full max-w-md mx-auto">
       <h2 className="text-xl font-semibold mb-4">
         What country do you live in?
       </h2>
@@ -27,13 +27,13 @@ const Step1Form = ({ onNext }) => {
           country
         </label>
         <div
-          className="w-full p-2 border border-gray-300 rounded flex justify-between items-center cursor-pointer bg-white"
+          className="w-full p-2 border border-[#ABB5FF] rounded flex justify-between items-center cursor-pointer bg-white"
           onClick={() => setIsOpen(!isOpen)}
         >
           <span className={country ? "text-black" : "text-gray-400"}>
             {country || "select country"}
           </span>
-          <ChevronDown className="text-gray-400" />
+          <ChevronDown className="" />
         </div>
         {isOpen && (
           <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b mt-[-1px] max-h-48 overflow-y-auto">
@@ -54,7 +54,7 @@ const Step1Form = ({ onNext }) => {
       </div>
       <button
         onClick={onNext}
-        className="w-full bg-gray-200 text-blue-500 p-2 rounded hover:bg-gray-300 transition-colors"
+        className="w-full bg-[#EAEAEA] border-[#C8C8C8] text-[#909CC6] p-2 rounded hover:bg-gray-300 transition-colors"
       >
         continue
       </button>
