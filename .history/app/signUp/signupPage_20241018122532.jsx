@@ -26,7 +26,7 @@ const SignUpPage = () => {
     <div className="flex flex-col md:flex-row h-screen">
       <ImageSlider />
       <div
-        className="w-full md:w-1/2 bg-cover bg-center bg-gray-200 flex flex-col justify-start items-center relative"
+        className="w-full md:w-1/2 bg-cover bg-center bg-gray-100 flex flex-col justify-start items-center relative"
         style={{ backgroundImage: 'url("/vector-img.svg")' }}
       >
         {/* Step Indicator at the top */}

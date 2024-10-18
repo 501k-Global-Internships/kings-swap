@@ -131,9 +131,9 @@ export default function CurrencyExchange() {
         );
       case 2:
         return (
-          <div className="shadow-sm max-w-md mx-auto">
-            <div className="bg-[#FFFFFF] rounded-lg border mb-3">
-              <div className="p-3 bg-gray-50 rounded-lg">
+          <div className=" pb-3 px-3 shadow-sm max-w-md mx-auto">
+            <div className="bg-[#FFFFFF] rounded-lg border">
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-[#434343] whitespace-nowrap">
                   Total amount payable in Espees:{" "}
                   <span className="font-semibold">10.5 Espee(s)</span>
@@ -144,7 +144,7 @@ export default function CurrencyExchange() {
                 </p>
               </div>
             </div>
-            <div className="py-3 px-3 bg-[#FFFFFF] rounded-lg border">
+            <div className="pb-3 px-3 bg-[#FFFFFF] rounded-lg border">
               <h2 className="text-xl font-semibold mb-4">
                 Enter your Receiving account
               </h2>

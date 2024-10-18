@@ -131,67 +131,62 @@ export default function CurrencyExchange() {
         );
       case 2:
         return (
-          <div className="shadow-sm max-w-md mx-auto">
-            <div className="bg-[#FFFFFF] rounded-lg border mb-3">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-sm text-[#434343] whitespace-nowrap">
-                  Total amount payable in Espees:{" "}
-                  <span className="font-semibold">10.5 Espee(s)</span>
-                </p>
-                <p className="text-sm text-[#434343] mt-2 whitespace-nowrap">
-                  Amount to receive in Naira:{" "}
-                  <span className="font-semibold">₦16500.0</span>
-                </p>
+          <div className="bg-[#FFFFFF] rounded-lg border pb-3 px-3 shadow-sm max-w-md mx-auto">
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-[#434343] whitespace-nowrap">
+                Total amount payable in Espees:{" "}
+                <span className="font-semibold">10.5 Espee(s)</span>
+              </p>
+              <p className="text-sm text-[#434343] mt-2 whitespace-nowrap">
+                Amount to receive in Naira:{" "}
+                <span className="font-semibold">₦16500.0</span>
+              </p>
+            </div>
+
+            <h2 className="text-xl font-semibold mb-4">
+              Enter your Receiving account
+            </h2>
+
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Account name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your name as Displayed on your account"
+                  className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6] placeholder-[#909CC6]"
+                />
               </div>
-            </div>
-            <div className="py-3 px-3 bg-[#FFFFFF] rounded-lg border">
-              <h2 className="text-xl font-semibold mb-4">
-                Enter your Receiving account
-              </h2>
 
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">
-                    Account name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter your name as Displayed on your account"
-                    className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6] placeholder-[#909CC6]"
-                  />
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Account number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter your account number"
+                  className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6] placeholder-[#909CC6]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Bank</label>
+                <div className="relative">
+                  <select className="w-full p-3 border border-gray-300 rounded appearance-none focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6]">
+                    <option>select Bank</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
+              </div>
+            </form>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">
-                    Account number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter your account number"
-                    className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6] placeholder-[#909CC6]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">
-                    Bank
-                  </label>
-                  <div className="relative">
-                    <select className="w-full p-3 border border-gray-300 rounded appearance-none focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6]">
-                      <option>select Bank</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  </div>
-                </div>
-              </form>
-
-              <button
-                onClick={handleContinue}
-                className="w-full bg-[#C8C8C8] text-[#909CC6] p-3 rounded mt-6 focus:outline-none focus:ring-2 focus:ring-[#EAEAEA]"
-              >
-                continue
-              </button>
-            </div>
+            <button
+              onClick={handleContinue}
+              className="w-full bg-[#C8C8C8] text-[#909CC6] p-3 rounded mt-6 focus:outline-none focus:ring-2 focus:ring-[#EAEAEA]"
+            >
+              continue
+            </button>
           </div>
         );
       case 3:
@@ -244,7 +239,7 @@ export default function CurrencyExchange() {
           <div className=" text-center max-w-md mx-auto">
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h2 className="font-medium mb-4">
-                Your espeses transaction is processing
+                Espees successfully received and converted
               </h2>
               <Image
                 src={Coin}
@@ -256,18 +251,18 @@ export default function CurrencyExchange() {
               <p className="mb-6">You have been credited ₦50,000</p>
             </div>
             <button
-              className="w-full bg-gray-800 text-white p-3 rounded-2xl mt-6 mb-3"
+              className="w-full bg-gray-800 text-white p-3 rounded mb-"
               onClick={goToDashboard}
             >
               go to Dashboard
             </button>
             <button
               onClick={handleNewTransaction}
-              className="w-full border border-gray-300 p-3 rounded-2xl"
+              className="w-full border border-gray-300 p-3 rounded"
             >
               make another transaction
             </button>
-            <div className="flex items-center justify-center mt-6 text-sm text-gray-600">
+            <div className="flex items-center justify-center mt-4 text-sm text-gray-600">
               <Image
                 src={Info}
                 width={16}

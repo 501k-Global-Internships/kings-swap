@@ -132,7 +132,7 @@ export default function CurrencyExchange() {
       case 2:
         return (
           <div className="shadow-sm max-w-md mx-auto">
-            <div className="bg-[#FFFFFF] rounded-lg border mb-3">
+            <div className="bg-[#FFFFFF] rounded-lg border">
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-[#434343] whitespace-nowrap">
                   Total amount payable in Espees:{" "}
