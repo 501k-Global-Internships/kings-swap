@@ -10,9 +10,10 @@ const Swap = () => {
   const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIsAnimating((prev) => !prev);
-    }, 6000); // Total animation cycle: 6s
+const interval = setInterval(() => {
+  setIsAnimating(true);
+  setTimeout(() => setIsAnimating(false), 1000);
+}, 8000);
 
     // Show button after a short delay
     const timer = setTimeout(() => setShowButton(true), 500);
@@ -28,38 +29,34 @@ const Swap = () => {
       {/* Animation section */}
       <div className="flex justify-center items-center py-10 mb-8 relative overflow-hidden">
         <div className="relative w-full max-w-md flex justify-center items-center">
-          {/* 'Receive' animation */}
           <div
             className={`flex items-center transition-all duration-1000 ease-in-out absolute left-0
               ${
                 isAnimating
-                  ? "opacity-0 -translate-x-full"
-                  : "opacity-100 translate-x-0"
+                  ? "opacity-0 -translate-x-full scale-x-150"
+                  : "opacity-100 translate-x-0 scale-x-100"
               }`}
           >
             <span className="text-xl font-bold whitespace-nowrap">Receive</span>
             <span
-              className="text-blue-600 text-6xl leading-none ml-8"
+              className="text-blue-600 text-6xl leading-none mr-48 ml-14"
               style={{ marginTop: "-8px" }}
             >
               •
             </span>
           </div>
 
-          {/* 'Swap' text */}
           <span className="text-xl font-bold z-10">Swap</span>
-
-          {/* 'Repeat' animation */}
           <div
             className={`flex items-center transition-all duration-1000 ease-in-out absolute right-0
               ${
                 isAnimating
-                  ? "opacity-0 translate-x-full"
-                  : "opacity-100 translate-x-0"
+                  ? "opacity-0 translate-x-full scale-x-150"
+                  : "opacity-100 translate-x-0 scale-x-100"
               }`}
           >
             <span
-              className="text-blue-600 text-6xl leading-none mr-8"
+              className="text-blue-600 text-6xl leading-none ml-48 mr-14"
               style={{ marginTop: "-8px" }}
             >
               •

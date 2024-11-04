@@ -1,7 +1,7 @@
 'use client'
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; // Changed from next/router
+import { useRouter } from "next/router";
 import Img from "../assets/coin2.svg";
 import Img2 from "../assets/vector-img.svg";
 import Img3 from "../assets/kings-chat.svg";
@@ -10,6 +10,7 @@ import Link from "next/link";
 
 const LoginPage = () => {
   const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -17,6 +18,13 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Wait for router to be ready before hydration
+  useEffect(() => {
+    if (router.isReady) {
+      setIsReady(true);
+    }
+  }, [router.isReady]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -52,7 +60,7 @@ const LoginPage = () => {
         localStorage.setItem("user", JSON.stringify(data.data));
 
         // Redirect to dashboard or home page
-        router.push("/dashboard");
+        await router.push("/dashboard");
       } else {
         setError("Invalid credentials");
       }
@@ -64,9 +72,14 @@ const LoginPage = () => {
     }
   };
 
+  // Don't render until router is ready
+  if (!isReady) {
+    return null; // or a loading spinner
+  }
+
   return (
     <div className="flex min-h-screen">
-      {/* Left section */}
+      {/* Left section remains the same */}
       <div
         className="w-1/2 bg-cover bg-center relative"
         style={{ backgroundImage: `url(${bgImg.src})` }}

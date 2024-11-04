@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; // Changed from next/router
+import { useRouter } from "next/router";
 import Img from "../assets/coin2.svg";
 import Img2 from "../assets/vector-img.svg";
 import Img3 from "../assets/kings-chat.svg";
@@ -58,7 +58,6 @@ const LoginPage = () => {
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
-      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +65,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left section */}
+      {/* Left section - remains unchanged */}
       <div
         className="w-1/2 bg-cover bg-center relative"
         style={{ backgroundImage: `url(${bgImg.src})` }}
@@ -92,7 +91,7 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right section */}
+      {/* Right section - updated with form handling */}
       <div className="w-1/2 bg-gray-100 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-md p-8 mb-4">

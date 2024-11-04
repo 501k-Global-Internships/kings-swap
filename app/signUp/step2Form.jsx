@@ -1,154 +1,180 @@
 import React, { useState } from "react";
 import { ChevronDown, Mail } from "lucide-react";
 
-const countryCodes = [
-  { code: "+234", country: "Nigeria", flag: "🇳🇬" },
-  { code: "+1", country: "United States", flag: "🇺🇸" },
-  { code: "+44", country: "United Kingdom", flag: "🇬🇧" },
-  { code: "+91", country: "India", flag: "🇮🇳" },
-  // Add more countries as needed
-];
-
-const Step2Form = ({ onNext }) => {
-  const [gender, setGender] = useState("");
+const Step2Form = ({ onNext, formData, errors }) => {
+  const [firstName, setFirstName] = useState(formData?.first_name || "");
+  const [lastName, setLastName] = useState(formData?.last_name || "");
+  const [username, setUsername] = useState(formData?.kingschat_username || "");
+  const [gender, setGender] = useState(formData?.gender || "");
+  const [email, setEmail] = useState(formData?.email || "");
+  const [phoneNumber, setPhoneNumber] = useState(formData?.phone_number || "");
   const [isGenderOpen, setIsGenderOpen] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(countryCodes[0]);
-  const [isCountryOpen, setIsCountryOpen] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onNext({
+      first_name: firstName,
+      last_name: lastName,
+      kingschat_username: username,
+      gender,
+      email,
+      phone_number: phoneNumber,
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-lg">
       <h2 className="text-xl font-semibold mb-6">Setup your account</h2>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">First name</label>
-          <input
-            type="text"
-            placeholder="Enter your real name"
-            className="w-full border rounded p-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">
-            Last name (surname)
-          </label>
-          <input
-            type="text"
-            placeholder="Enter your real name"
-            className="w-full border rounded p-2 text-sm"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">
-            Kings chat username
-          </label>
-          <input
-            type="text"
-            placeholder="Enter your username"
-            className="w-full border rounded p-2 text-sm"
-          />
-          <p className="text-xs text-blue-500 mt-1">
-            Don't have an account? create one
-          </p>
-        </div>
-        <div className="relative">
-          <label className="block text-sm text-gray-600 mb-1">Gender</label>
-          <div
-            className="w-full border rounded p-2 text-sm flex justify-between items-center cursor-pointer"
-            onClick={() => setIsGenderOpen(!isGenderOpen)}
-          >
-            <span className={gender ? "text-black" : "text-gray-400"}>
-              {gender || "Select your gender"}
-            </span>
-            <ChevronDown className="text-gray-400" size={16} />
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">
+              First name
+            </label>
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter your real name"
+              className="w-full border rounded p-2 text-sm"
+              required
+            />
+            {errors?.first_name && (
+              <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>
+            )}
           </div>
-          {isGenderOpen && (
-            <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b mt-[-1px] max-h-32 overflow-y-auto">
-              {["Male", "Female", "Other"].map((g) => (
-                <div
-                  key={g}
-                  className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-                  onClick={() => {
-                    setGender(g);
-                    setIsGenderOpen(false);
-                  }}
-                >
-                  {g}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div className="mb-4">
-        <label className="block text-sm text-gray-600 mb-1">
-          Email address
-        </label>
-        <div className="relative">
-          <input
-            type="email"
-            placeholder="Enter your email address"
-            className="w-full border rounded p-2 text-sm pr-8"
-          />
-          <Mail
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={16}
-          />
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">
+              Last name (surname)
+            </label>
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter your real name"
+              className="w-full border rounded p-2 text-sm"
+              required
+            />
+            {errors?.last_name && (
+              <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="mb-6">
-        <label className="block text-sm text-gray-600 mb-1">Phone number</label>
-        <div className="flex">
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">
+              Kings chat username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              className="w-full border rounded p-2 text-sm"
+              required
+              pattern="^[a-zA-Z0-9._]+$"
+              minLength={4}
+              maxLength={32}
+            />
+            {errors?.kingschat_username && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.kingschat_username}
+              </p>
+            )}
+          </div>
+
           <div className="relative">
+            <label className="block text-sm text-gray-600 mb-1">Gender</label>
             <div
-              className="w-24 border rounded-l p-2 bg-gray-50 flex items-center justify-between cursor-pointer"
-              onClick={() => setIsCountryOpen(!isCountryOpen)}
+              className="w-full border rounded p-2 text-sm flex justify-between items-center cursor-pointer"
+              onClick={() => setIsGenderOpen(!isGenderOpen)}
             >
-              <span className="flex items-center">
-                <span className="mr-1">{selectedCountry.flag}</span>
-                <span className="text-sm">{selectedCountry.code}</span>
+              <span className={gender ? "text-black" : "text-gray-400"}>
+                {gender || "Select your gender"}
               </span>
               <ChevronDown className="text-gray-400" size={16} />
             </div>
-            {isCountryOpen && (
-              <div className="absolute z-20 w-40 mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-48 overflow-y-auto">
-                {countryCodes.map((country) => (
+            {isGenderOpen && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b mt-[-1px]">
+                {["Male", "Female"].map((g) => (
                   <div
-                    key={country.code}
-                    className="p-2 hover:bg-gray-100 cursor-pointer flex items-center"
+                    key={g}
+                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
                     onClick={() => {
-                      setSelectedCountry(country);
-                      setIsCountryOpen(false);
+                      setGender(g);
+                      setIsGenderOpen(false);
                     }}
                   >
-                    <span className="mr-2">{country.flag}</span>
-                    <span className="text-sm">
-                      {country.country} ({country.code})
-                    </span>
+                    {g}
                   </div>
                 ))}
               </div>
             )}
+            {errors?.gender && (
+              <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
+            )}
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm text-gray-600 mb-1">
+            Email address
+          </label>
+          <div className="relative">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="w-full border rounded p-2 text-sm pr-8"
+              required
+              maxLength={150}
+            />
+            <Mail
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={16}
+            />
+          </div>
+          {errors?.email && (
+            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+          )}
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm text-gray-600 mb-1">
+            Phone number
+          </label>
           <input
             type="tel"
-            placeholder="Enter your Phone number"
-            className="flex-grow border border-l-0 rounded-r p-2 text-sm"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="Enter your Phone number (e.g. +2348031234567)"
+            className="w-full border rounded p-2 text-sm"
+            required
           />
+          {errors?.phone_number && (
+            <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>
+          )}
         </div>
-      </div>
 
-      <button
-        onClick={onNext}
-        className="w-full bg-gray-200 text-gray-500 p-2 rounded transition-colors text-sm"
-      >
-        continue
-      </button>
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white p-2 rounded transition-colors text-sm hover:bg-blue-600 disabled:bg-gray-300"
+          disabled={
+            !firstName ||
+            !lastName ||
+            !username ||
+            !gender ||
+            !email ||
+            !phoneNumber
+          }
+        >
+          Continue
+        </button>
+      </form>
     </div>
   );
 };
