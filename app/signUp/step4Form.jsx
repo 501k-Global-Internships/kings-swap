@@ -24,7 +24,7 @@ const Step4Form = ({ email, onSuccess }) => {
       const code = otp.join("");
 
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/email-verification/verify",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/verify",
         {
           method: "POST",
           headers: {
@@ -58,7 +58,7 @@ const Step4Form = ({ email, onSuccess }) => {
       setError("");
 
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/email-verification/request",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/request",
         {
           method: "POST",
           headers: {

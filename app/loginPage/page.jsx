@@ -33,7 +33,7 @@ const LoginPage = () => {
 
     try {
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/login",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/login",
         {
           method: "POST",
           headers: {

@@ -68,7 +68,7 @@ const SignUpPage = () => {
 
     try {
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/register",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/register",
         {
           method: "POST",
           headers: {
@@ -100,7 +100,7 @@ const SignUpPage = () => {
   const requestVerificationCode = async (email) => {
     try {
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/email-verification/request",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/request",
         {
           method: "POST",
           headers: {
@@ -126,7 +126,7 @@ const SignUpPage = () => {
 
     try {
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/email-verification/verify",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/verify",
         {
           method: "POST",
           headers: {

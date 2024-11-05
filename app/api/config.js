@@ -1,6 +1,6 @@
 
 export const API_CONFIG = {
-  baseUrl: "http://kings-swap-be.test/api/v1",
+  baseUrl: "https://cabinet.kingsswap.com.ng/",
   endpoints: {
     register: "/auth/register",
     verifyEmail: "/auth/email-verification/verify",

@@ -12,7 +12,7 @@ const AccountVerification = ({ email, verificationCode, onLogin }) => {
   const verifyEmail = async () => {
     try {
       const response = await fetch(
-        "http://kings-swap-be.test/api/v1/auth/email-verification/verify",
+        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/verify",
         {
           method: "POST",
           headers: {

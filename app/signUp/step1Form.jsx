@@ -1,9 +1,9 @@
+'use client'
 import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const Step1Form = ({ onNext }) => {
+const Step1Form = ({ onNext, apiBaseUrl }) => {
   const [countries, setCountries] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -16,26 +16,39 @@ const Step1Form = ({ onNext }) => {
 
   const fetchCountries = async () => {
     try {
-      const response = await fetch(
-        "http://kings-swap-be.test/api/v1/attributes/countries",
-        {
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      setIsLoading(true);
+      setError(null);
+
+      // Use the baseUrl prop or fallback to a default
+      const baseUrl = apiBaseUrl || "https://cabinet.kingsswap.com.ng";
+      const response = await fetch(`${baseUrl}/api/v1/attributes/countries`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        // Add credentials if needed
+        // credentials: 'include',
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch countries");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      if (result.success && result.data) {
+
+      if (result.success && Array.isArray(result.data)) {
         setCountries(result.data);
+      } else {
+        throw new Error("Invalid data format received from server");
       }
     } catch (err) {
-      setError("Unable to load countries. Please try again later.");
+      console.error("Error fetching countries:", err);
+      setError(
+        err.message === "Failed to fetch"
+          ? "Network error: Please check your connection and try again."
+          : "Unable to load countries. Please try again later."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -47,11 +60,23 @@ const Step1Form = ({ onNext }) => {
     }
   };
 
+  const handleRetry = () => {
+    fetchCountries();
+  };
+
   if (error) {
     return (
       <div className="w-full max-w-md mx-auto mt-4">
         <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="flex flex-col gap-2">
+            <span>{error}</span>
+            <button
+              onClick={handleRetry}
+              className="text-sm text-white underline hover:no-underline"
+            >
+              Try Again
+            </button>
+          </AlertDescription>
         </Alert>
       </div>
     );
@@ -80,11 +105,20 @@ const Step1Form = ({ onNext }) => {
             </div>
           ) : (
             <>
-              <span
-                className={selectedCountry ? "text-black" : "text-gray-400"}
-              >
-                {selectedCountry ? selectedCountry.name : "Select country"}
-              </span>
+              <div className="flex items-center gap-2">
+                {selectedCountry && (
+                  <img
+                    src={selectedCountry.flag_url}
+                    alt={`${selectedCountry.name} flag`}
+                    className="w-6 h-4 object-cover"
+                  />
+                )}
+                <span
+                  className={selectedCountry ? "text-black" : "text-gray-400"}
+                >
+                  {selectedCountry ? selectedCountry.name : "Select country"}
+                </span>
+              </div>
               <ChevronDown
                 className={`transition-transform duration-200 ${
                   isOpen ? "rotate-180" : ""
