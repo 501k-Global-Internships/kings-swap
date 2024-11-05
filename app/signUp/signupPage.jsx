@@ -18,6 +18,7 @@ const SignUpPage = () => {
   const [verificationComplete, setVerificationComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
   const [userData, setUserData] = useState({
     country_id: "",
     first_name: "",
@@ -31,7 +32,46 @@ const SignUpPage = () => {
     password_confirmation: "",
   });
 
+  const validateForm = (data) => {
+    const errors = {};
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      errors.email = ["Please enter a valid email address"];
+    }
+
+    // KingsChat username validation
+    const usernameRegex = /^[a-zA-Z0-9._]+$/;
+    if (
+      !data.kingschat_username.match(usernameRegex) ||
+      data.kingschat_username.length < 4 ||
+      data.kingschat_username.length > 32
+    ) {
+      errors.kingschat_username = [
+        "Username must be 4-32 characters and can only contain letters, numbers, dots, and underscores",
+      ];
+    }
+
+    // Phone number validation
+    const phoneRegex = /^\+[0-9]{10,15}$/;
+    if (!data.phone_number && phoneRegex.test(data.phone_number)) {
+      errors.phone_number = [
+        "Please enter a valid phone number with country code",
+      ];
+    }
+
+    // Password validation
+    if (data.password !== data.password_confirmation) {
+      errors.password = ["Passwords do not match"];
+    }
+
+    return errors;
+  };
+
   const handleStep1Complete = (countryData) => {
+    setValidationErrors({});
+    setError(null);
     setUserData((prev) => ({
       ...prev,
       country_id: countryData.id.toLowerCase(),
@@ -40,31 +80,45 @@ const SignUpPage = () => {
   };
 
   const handleStep2Complete = (personalInfo) => {
+    setValidationErrors({});
+    setError(null);
     setUserData((prev) => ({
       ...prev,
-      first_name: personalInfo.firstName,
-      last_name: personalInfo.lastName,
-      email: personalInfo.email,
-      kingschat_username: personalInfo.username,
+      first_name: personalInfo.firstName?.trim(),
+      last_name: personalInfo.lastName?.trim(),
+      email: personalInfo.email?.toLowerCase().trim(),
+      kingschat_username: personalInfo.username?.trim(),
       gender: personalInfo.gender,
     }));
     setStep(3);
   };
 
   const handleStep3Complete = (contactInfo) => {
-    setUserData((prev) => ({
-      ...prev,
-      phone_number: contactInfo.phoneNumber,
+    setValidationErrors({});
+    setError(null);
+    const updatedUserData = {
+      ...userData,
+      phone_number: contactInfo.phoneNumber.trim(),
       accepts_promotions: contactInfo.acceptsPromotions,
       password: contactInfo.password,
       password_confirmation: contactInfo.password,
-    }));
-    handleRegistration(contactInfo);
+    };
+
+    // Validate before submission
+    const errors = validateForm(updatedUserData);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setUserData(updatedUserData);
+    handleRegistration(updatedUserData);
   };
 
-  const handleRegistration = async () => {
+  const handleRegistration = async (registrationData) => {
     setIsLoading(true);
     setError(null);
+    setValidationErrors({});
 
     try {
       const response = await fetch(
@@ -75,23 +129,31 @@ const SignUpPage = () => {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify(userData),
+          body: JSON.stringify(registrationData),
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 422 && data.errors) {
+          setValidationErrors(data.errors);
+          throw new Error("Please check the form for errors.");
+        }
         throw new Error(data.message || "Registration failed");
       }
 
       if (data.success) {
         setStep(4);
         // Automatically request email verification code
-        await requestVerificationCode(userData.email);
+        await requestVerificationCode(registrationData.email);
       }
     } catch (err) {
       setError(err.message || "An error occurred during registration");
+      if (err.message === "Registration failed" && step === 3) {
+        // Stay on step 3 if registration failed
+        setStep(3);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +185,7 @@ const SignUpPage = () => {
   const handleVerify = async (code) => {
     setIsLoading(true);
     setError(null);
+    setValidationErrors({});
 
     try {
       const response = await fetch(
@@ -143,6 +206,10 @@ const SignUpPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 422 && data.errors) {
+          setValidationErrors(data.errors);
+          throw new Error("Invalid verification code.");
+        }
         throw new Error(data.message || "Verification failed");
       }
 
@@ -196,12 +263,27 @@ const SignUpPage = () => {
           </div>
         </div>
 
-        {/* Error Display */}
-        {error && (
+        {/* Error and Validation Displays */}
+        {(error || Object.keys(validationErrors).length > 0) && (
           <div className="absolute top-20 w-full max-w-md px-4">
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            {error && (
+              <Alert variant="destructive" className="mb-2">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {Object.keys(validationErrors).length > 0 && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  <ul className="list-disc pl-4">
+                    {Object.entries(validationErrors).map(([field, errors]) => (
+                      <li key={field} className="text-sm">
+                        {errors[0]}
+                      </li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         )}
 
