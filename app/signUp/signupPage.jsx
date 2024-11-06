@@ -12,6 +12,7 @@ import Step3Form from "./step3Form";
 import Step4Form from "./step4Form";
 import SuccessMessage from "./successMessage";
 import KingsChat from "../assets/kings-chat.svg";
+import bgImg from "../assets/signup.svg";
 
 const SignUpPage = () => {
   const [step, setStep] = useState(1);
@@ -35,15 +36,29 @@ const SignUpPage = () => {
   const validateForm = (data) => {
     const errors = {};
 
+    // First name validation
+    if (!data.first_name?.trim()) {
+      errors.first_name = ["First name is required"];
+    }
+
+    // Last name validation
+    if (!data.last_name?.trim()) {
+      errors.last_name = ["Last name is required"];
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
+    if (!data.email) {
+      errors.email = ["Email is required"];
+    } else if (!emailRegex.test(data.email)) {
       errors.email = ["Please enter a valid email address"];
     }
 
     // KingsChat username validation
     const usernameRegex = /^[a-zA-Z0-9._]+$/;
-    if (
+    if (!data.kingschat_username) {
+      errors.kingschat_username = ["Username is required"];
+    } else if (
       !data.kingschat_username.match(usernameRegex) ||
       data.kingschat_username.length < 4 ||
       data.kingschat_username.length > 32
@@ -53,16 +68,27 @@ const SignUpPage = () => {
       ];
     }
 
+    // Gender validation
+    if (!data.gender) {
+      errors.gender = ["Gender is required"];
+    }
+
     // Phone number validation
     const phoneRegex = /^\+[0-9]{10,15}$/;
-    if (!data.phone_number && phoneRegex.test(data.phone_number)) {
+    if (!data.phone_number) {
+      errors.phone_number = ["Phone number is required"];
+    } else if (!phoneRegex.test(data.phone_number)) {
       errors.phone_number = [
         "Please enter a valid phone number with country code",
       ];
     }
 
     // Password validation
-    if (data.password !== data.password_confirmation) {
+    if (!data.password) {
+      errors.password = ["Password is required"];
+    } else if (data.password.length < 8) {
+      errors.password = ["Password must be at least 8 characters long"];
+    } else if (data.password !== data.password_confirmation) {
       errors.password = ["Passwords do not match"];
     }
 
@@ -72,6 +98,12 @@ const SignUpPage = () => {
   const handleStep1Complete = (countryData) => {
     setValidationErrors({});
     setError(null);
+
+    if (!countryData?.id) {
+      setError("Please select a country");
+      return;
+    }
+
     setUserData((prev) => ({
       ...prev,
       country_id: countryData.id.toLowerCase(),
@@ -79,29 +111,64 @@ const SignUpPage = () => {
     setStep(2);
   };
 
-  const handleStep2Complete = (personalInfo) => {
-    setValidationErrors({});
-    setError(null);
-    setUserData((prev) => ({
-      ...prev,
-      first_name: personalInfo.firstName?.trim(),
-      last_name: personalInfo.lastName?.trim(),
-      email: personalInfo.email?.toLowerCase().trim(),
-      kingschat_username: personalInfo.username?.trim(),
-      gender: personalInfo.gender,
-    }));
-    setStep(3);
+const handleStep2Complete = (formData) => {
+  setValidationErrors({});
+  setError(null);
+
+  const updatedUserData = {
+    ...userData,
+    first_name: formData.first_name?.trim() || "",
+    last_name: formData.last_name?.trim() || "",
+    email: formData.email?.toLowerCase().trim() || "",
+    kingschat_username: formData.kingschat_username?.trim() || "",
+    gender: formData.gender || "",
+    phone_number: formData.phone_number?.trim() || "",
   };
 
+  // Validate the data
+  const errors = {};
+  if (!updatedUserData.first_name) {
+    errors.first_name = ["First name is required"];
+  }
+  if (!updatedUserData.last_name) {
+    errors.last_name = ["Last name is required"];
+  }
+  if (!updatedUserData.kingschat_username) {
+    errors.kingschat_username = ["Username is required"];
+  }
+  if (!updatedUserData.gender) {
+    errors.gender = ["Gender is required"];
+  }
+  if (!updatedUserData.email) {
+    errors.email = ["Email is required"];
+  }
+  if (!updatedUserData.phone_number) {
+    errors.phone_number = ["Phone number is required"];
+  }
+
+  // If there are validation errors, set them and return
+  if (Object.keys(errors).length > 0) {
+    setValidationErrors(errors);
+    return;
+  }
+
+  // If validation passes, update user data and move to next step
+  setUserData(updatedUserData);
+  setStep(3);
+  };
+  
   const handleStep3Complete = (contactInfo) => {
     setValidationErrors({});
     setError(null);
+
     const updatedUserData = {
       ...userData,
-      phone_number: contactInfo.phoneNumber.trim(),
-      accepts_promotions: contactInfo.acceptsPromotions,
-      password: contactInfo.password,
-      password_confirmation: contactInfo.password,
+      phone_number: contactInfo?.phoneNumber
+        ? contactInfo.phoneNumber.trim()
+        : "",
+      accepts_promotions: contactInfo?.acceptsPromotions || false,
+      password: contactInfo?.password || "",
+      password_confirmation: contactInfo?.password || "",
     };
 
     // Validate before submission
@@ -183,6 +250,11 @@ const SignUpPage = () => {
   };
 
   const handleVerify = async (code) => {
+    if (!code) {
+      setError("Please enter the verification code");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setValidationErrors({});
@@ -232,7 +304,7 @@ const SignUpPage = () => {
       <ImageSlider />
       <div
         className="w-full md:w-1/2 bg-cover bg-center bg-gray-200 flex flex-col justify-start items-center relative"
-        style={{ backgroundImage: 'url("/vector-img.svg")' }}
+        style={{ backgroundImage: `url(${bgImg.src})` }}
       >
         {/* Step Indicator */}
         <div className="absolute top-0 w-full flex justify-center items-center p-4">

@@ -1,7 +1,8 @@
+'use client'
 import React, { useState } from "react";
 import { ChevronDown, Mail } from "lucide-react";
 
-const Step2Form = ({ onNext, formData, errors }) => {
+const Step2Form = ({ onNext, formData, errors: serverErrors }) => {
   const [firstName, setFirstName] = useState(formData?.first_name || "");
   const [lastName, setLastName] = useState(formData?.last_name || "");
   const [username, setUsername] = useState(formData?.kingschat_username || "");
@@ -10,16 +11,50 @@ const Step2Form = ({ onNext, formData, errors }) => {
   const [phoneNumber, setPhoneNumber] = useState(formData?.phone_number || "");
   const [isGenderOpen, setIsGenderOpen] = useState(false);
 
+  // Handle field changes
+  const handleInputChange = (field, value) => {
+    switch (field) {
+      case "firstName":
+        setFirstName(value);
+        break;
+      case "lastName":
+        setLastName(value);
+        break;
+      case "username":
+        setUsername(value);
+        break;
+      case "email":
+        setEmail(value);
+        break;
+      case "phoneNumber":
+        setPhoneNumber(value);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onNext({
-      first_name: firstName,
-      last_name: lastName,
-      kingschat_username: username,
+      firstName,
+      lastName,
+      username,
       gender,
       email,
-      phone_number: phoneNumber,
+      phoneNumber,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      kingschat_username: username.trim(),
+      phone_number: phoneNumber.trim(),
     });
+  };
+
+  const getInputClassName = (fieldName) => {
+    const hasError = serverErrors?.[fieldName];
+    return `w-full border ${
+      hasError ? "border-red-500" : "border-gray-300"
+    } rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`;
   };
 
   return (
@@ -35,13 +70,14 @@ const Step2Form = ({ onNext, formData, errors }) => {
             <input
               type="text"
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => handleInputChange("firstName", e.target.value)}
               placeholder="Enter your real name"
-              className="w-full border rounded p-2 text-sm"
-              required
+              className={getInputClassName("first_name")}
             />
-            {errors?.first_name && (
-              <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>
+            {serverErrors?.first_name && (
+              <p className="text-red-500 text-xs mt-1">
+                {serverErrors.first_name}
+              </p>
             )}
           </div>
 
@@ -52,13 +88,14 @@ const Step2Form = ({ onNext, formData, errors }) => {
             <input
               type="text"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => handleInputChange("lastName", e.target.value)}
               placeholder="Enter your real name"
-              className="w-full border rounded p-2 text-sm"
-              required
+              className={getInputClassName("last_name")}
             />
-            {errors?.last_name && (
-              <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>
+            {serverErrors?.last_name && (
+              <p className="text-red-500 text-xs mt-1">
+                {serverErrors.last_name}
+              </p>
             )}
           </div>
         </div>
@@ -71,17 +108,13 @@ const Step2Form = ({ onNext, formData, errors }) => {
             <input
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => handleInputChange("username", e.target.value)}
               placeholder="Enter your username"
-              className="w-full border rounded p-2 text-sm"
-              required
-              pattern="^[a-zA-Z0-9._]+$"
-              minLength={4}
-              maxLength={32}
+              className={getInputClassName("kingschat_username")}
             />
-            {errors?.kingschat_username && (
+            {serverErrors?.kingschat_username && (
               <p className="text-red-500 text-xs mt-1">
-                {errors.kingschat_username}
+                {serverErrors.kingschat_username}
               </p>
             )}
           </div>
@@ -89,7 +122,9 @@ const Step2Form = ({ onNext, formData, errors }) => {
           <div className="relative">
             <label className="block text-sm text-gray-600 mb-1">Gender</label>
             <div
-              className="w-full border rounded p-2 text-sm flex justify-between items-center cursor-pointer"
+              className={`w-full border ${
+                serverErrors?.gender ? "border-red-500" : "border-gray-300"
+              } rounded p-2 text-sm flex justify-between items-center cursor-pointer`}
               onClick={() => setIsGenderOpen(!isGenderOpen)}
             >
               <span className={gender ? "text-black" : "text-gray-400"}>
@@ -113,8 +148,8 @@ const Step2Form = ({ onNext, formData, errors }) => {
                 ))}
               </div>
             )}
-            {errors?.gender && (
-              <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
+            {serverErrors?.gender && (
+              <p className="text-red-500 text-xs mt-1">{serverErrors.gender}</p>
             )}
           </div>
         </div>
@@ -127,10 +162,9 @@ const Step2Form = ({ onNext, formData, errors }) => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => handleInputChange("email", e.target.value)}
               placeholder="Enter your email address"
-              className="w-full border rounded p-2 text-sm pr-8"
-              required
+              className={`${getInputClassName("email")} pr-8`}
               maxLength={150}
             />
             <Mail
@@ -138,8 +172,8 @@ const Step2Form = ({ onNext, formData, errors }) => {
               size={16}
             />
           </div>
-          {errors?.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+          {serverErrors?.email && (
+            <p className="text-red-500 text-xs mt-1">{serverErrors.email}</p>
           )}
         </div>
 
@@ -150,13 +184,14 @@ const Step2Form = ({ onNext, formData, errors }) => {
           <input
             type="tel"
             value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
             placeholder="Enter your Phone number (e.g. +2348031234567)"
-            className="w-full border rounded p-2 text-sm"
-            required
+            className={getInputClassName("phone_number")}
           />
-          {errors?.phone_number && (
-            <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>
+          {serverErrors?.phone_number && (
+            <p className="text-red-500 text-xs mt-1">
+              {serverErrors.phone_number}
+            </p>
           )}
         </div>
 

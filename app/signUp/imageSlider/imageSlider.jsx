@@ -81,7 +81,7 @@ const ImageSlider = () => {
           Swap Espees quicker!
         </h1>
         <p className="text-center text-[#14172A]">
-          One account to keep and exchange your espees
+          One account to keep and <br /> exchange your espees
         </p>
       </div>
 
