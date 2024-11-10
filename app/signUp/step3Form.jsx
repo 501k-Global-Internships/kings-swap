@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { EyeOff, Eye, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const Step3Form = ({ onNext }) => {
+const Step3Form = ({ formData: parentFormData, onNext }) => {
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
@@ -37,7 +37,6 @@ const Step3Form = ({ onNext }) => {
       [name]: name.includes("accept") ? checked : value,
     }));
 
-    // Clear related errors when input changes
     setErrors((prev) => ({
       ...prev,
       [name]: undefined,
@@ -74,14 +73,17 @@ const Step3Form = ({ onNext }) => {
     setIsLoading(true);
 
     try {
-      // Pass the validated data to parent component
+      // Instead of making the API call here, pass the data to the parent component
       onNext({
         password: formData.password,
-        password_confirmation: formData.password,
+        password_confirmation: formData.confirmPassword,
         accepts_promotions: formData.acceptsPromotions,
       });
     } catch (error) {
-      setApiError(error.message || "An error occurred. Please try again.");
+      setApiError(
+        error.message ||
+          "An error occurred during registration. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }

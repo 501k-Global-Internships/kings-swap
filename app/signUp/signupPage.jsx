@@ -79,7 +79,7 @@ const SignUpPage = () => {
       errors.phone_number = ["Phone number is required"];
     } else if (!phoneRegex.test(data.phone_number)) {
       errors.phone_number = [
-        "Please enter a valid phone number with country code",
+        "Please enter a valid phone number with country code (e.g., +1234567890)",
       ];
     }
 
@@ -111,74 +111,97 @@ const SignUpPage = () => {
     setStep(2);
   };
 
-const handleStep2Complete = (formData) => {
-  setValidationErrors({});
-  setError(null);
-
-  const updatedUserData = {
-    ...userData,
-    first_name: formData.first_name?.trim() || "",
-    last_name: formData.last_name?.trim() || "",
-    email: formData.email?.toLowerCase().trim() || "",
-    kingschat_username: formData.kingschat_username?.trim() || "",
-    gender: formData.gender || "",
-    phone_number: formData.phone_number?.trim() || "",
-  };
-
-  // Validate the data
-  const errors = {};
-  if (!updatedUserData.first_name) {
-    errors.first_name = ["First name is required"];
-  }
-  if (!updatedUserData.last_name) {
-    errors.last_name = ["Last name is required"];
-  }
-  if (!updatedUserData.kingschat_username) {
-    errors.kingschat_username = ["Username is required"];
-  }
-  if (!updatedUserData.gender) {
-    errors.gender = ["Gender is required"];
-  }
-  if (!updatedUserData.email) {
-    errors.email = ["Email is required"];
-  }
-  if (!updatedUserData.phone_number) {
-    errors.phone_number = ["Phone number is required"];
-  }
-
-  // If there are validation errors, set them and return
-  if (Object.keys(errors).length > 0) {
-    setValidationErrors(errors);
-    return;
-  }
-
-  // If validation passes, update user data and move to next step
-  setUserData(updatedUserData);
-  setStep(3);
-  };
-  
-  const handleStep3Complete = (contactInfo) => {
+  const handleStep2Complete = (formData) => {
     setValidationErrors({});
     setError(null);
 
     const updatedUserData = {
       ...userData,
-      phone_number: contactInfo?.phoneNumber
-        ? contactInfo.phoneNumber.trim()
-        : "",
-      accepts_promotions: contactInfo?.acceptsPromotions || false,
-      password: contactInfo?.password || "",
-      password_confirmation: contactInfo?.password || "",
+      first_name: formData.first_name?.trim() || "",
+      last_name: formData.last_name?.trim() || "",
+      email: formData.email?.toLowerCase().trim() || "",
+      kingschat_username: formData.kingschat_username?.trim() || "",
+      gender: formData.gender || "",
+      phone_number: formData.phone_number?.trim() || "",
     };
 
-    // Validate before submission
-    const errors = validateForm(updatedUserData);
+    // Validate the data
+    const errors = {};
+    if (!updatedUserData.first_name) {
+      errors.first_name = ["First name is required"];
+    }
+    if (!updatedUserData.last_name) {
+      errors.last_name = ["Last name is required"];
+    }
+    if (!updatedUserData.kingschat_username) {
+      errors.kingschat_username = ["Username is required"];
+    }
+    if (!updatedUserData.gender) {
+      errors.gender = ["Gender is required"];
+    }
+    if (!updatedUserData.email) {
+      errors.email = ["Email is required"];
+    }
+    if (!updatedUserData.phone_number) {
+      errors.phone_number = ["Phone number is required"];
+    }
+
+    // If there are validation errors, set them and return
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
     }
 
+    // If validation passes, update user data and move to next step
     setUserData(updatedUserData);
+    setStep(3);
+  };
+
+  const handleStep3Complete = (step3Data) => {
+    setValidationErrors({});
+    setError(null);
+
+    const updatedUserData = {
+      ...userData,
+      // Keep the existing phone_number from Step 2
+      accepts_promotions: step3Data.accepts_promotions || false,
+      password: step3Data.password || "",
+      password_confirmation: step3Data.password_confirmation || "",
+    };
+
+    // Validate the complete registration data
+    const errors = {};
+
+    // Add only relevant validations for final submission
+    if (!updatedUserData.first_name) {
+      errors.first_name = ["First name is required"];
+    }
+    if (!updatedUserData.last_name) {
+      errors.last_name = ["Last name is required"];
+    }
+    if (!updatedUserData.email) {
+      errors.email = ["Email is required"];
+    }
+    if (!updatedUserData.password) {
+      errors.password = ["Password is required"];
+    }
+    if (updatedUserData.password !== updatedUserData.password_confirmation) {
+      errors.password = ["Passwords do not match"];
+    }
+    if (!updatedUserData.phone_number) {
+      // This should already be set from Step 2
+      console.warn("Phone number missing from Step 2");
+      setStep(2); // Go back to Step 2 if phone number is missing
+      return;
+    }
+
+    // If there are validation errors, set them and return
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // If validation passes, proceed with registration
     handleRegistration(updatedUserData);
   };
 
