@@ -33,20 +33,17 @@ const SignUpPage = () => {
     password_confirmation: "",
   });
 
-  const validateForm = (data) => {
+  const validateStep2 = (data) => {
     const errors = {};
 
-    // First name validation
     if (!data.first_name?.trim()) {
       errors.first_name = ["First name is required"];
     }
 
-    // Last name validation
     if (!data.last_name?.trim()) {
       errors.last_name = ["Last name is required"];
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!data.email) {
       errors.email = ["Email is required"];
@@ -54,7 +51,6 @@ const SignUpPage = () => {
       errors.email = ["Please enter a valid email address"];
     }
 
-    // KingsChat username validation
     const usernameRegex = /^[a-zA-Z0-9._]+$/;
     if (!data.kingschat_username) {
       errors.kingschat_username = ["Username is required"];
@@ -68,12 +64,10 @@ const SignUpPage = () => {
       ];
     }
 
-    // Gender validation
     if (!data.gender) {
       errors.gender = ["Gender is required"];
     }
 
-    // Phone number validation
     const phoneRegex = /^\+[0-9]{10,15}$/;
     if (!data.phone_number) {
       errors.phone_number = ["Phone number is required"];
@@ -83,11 +77,20 @@ const SignUpPage = () => {
       ];
     }
 
-    // Password validation
+    return errors;
+  };
+
+  const validateStep3 = (data) => {
+    const errors = {};
+
     if (!data.password) {
       errors.password = ["Password is required"];
     } else if (data.password.length < 8) {
       errors.password = ["Password must be at least 8 characters long"];
+    }
+
+    if (!data.password_confirmation) {
+      errors.password_confirmation = ["Please confirm your password"];
     } else if (data.password !== data.password_confirmation) {
       errors.password = ["Passwords do not match"];
     }
@@ -125,34 +128,13 @@ const SignUpPage = () => {
       phone_number: formData.phone_number?.trim() || "",
     };
 
-    // Validate the data
-    const errors = {};
-    if (!updatedUserData.first_name) {
-      errors.first_name = ["First name is required"];
-    }
-    if (!updatedUserData.last_name) {
-      errors.last_name = ["Last name is required"];
-    }
-    if (!updatedUserData.kingschat_username) {
-      errors.kingschat_username = ["Username is required"];
-    }
-    if (!updatedUserData.gender) {
-      errors.gender = ["Gender is required"];
-    }
-    if (!updatedUserData.email) {
-      errors.email = ["Email is required"];
-    }
-    if (!updatedUserData.phone_number) {
-      errors.phone_number = ["Phone number is required"];
-    }
+    const errors = validateStep2(updatedUserData);
 
-    // If there are validation errors, set them and return
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
     }
 
-    // If validation passes, update user data and move to next step
     setUserData(updatedUserData);
     setStep(3);
   };
@@ -163,45 +145,18 @@ const SignUpPage = () => {
 
     const updatedUserData = {
       ...userData,
-      // Keep the existing phone_number from Step 2
       accepts_promotions: step3Data.accepts_promotions || false,
       password: step3Data.password || "",
       password_confirmation: step3Data.password_confirmation || "",
     };
 
-    // Validate the complete registration data
-    const errors = {};
+    const errors = validateStep3(updatedUserData);
 
-    // Add only relevant validations for final submission
-    if (!updatedUserData.first_name) {
-      errors.first_name = ["First name is required"];
-    }
-    if (!updatedUserData.last_name) {
-      errors.last_name = ["Last name is required"];
-    }
-    if (!updatedUserData.email) {
-      errors.email = ["Email is required"];
-    }
-    if (!updatedUserData.password) {
-      errors.password = ["Password is required"];
-    }
-    if (updatedUserData.password !== updatedUserData.password_confirmation) {
-      errors.password = ["Passwords do not match"];
-    }
-    if (!updatedUserData.phone_number) {
-      // This should already be set from Step 2
-      console.warn("Phone number missing from Step 2");
-      setStep(2); // Go back to Step 2 if phone number is missing
-      return;
-    }
-
-    // If there are validation errors, set them and return
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
     }
 
-    // If validation passes, proceed with registration
     handleRegistration(updatedUserData);
   };
 
@@ -219,7 +174,18 @@ const SignUpPage = () => {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: JSON.stringify(registrationData),
+          body: JSON.stringify({
+            country_id: registrationData.country_id,
+            first_name: registrationData.first_name,
+            last_name: registrationData.last_name,
+            email: registrationData.email,
+            kingschat_username: registrationData.kingschat_username,
+            gender: registrationData.gender,
+            phone_number: registrationData.phone_number,
+            accepts_promotions: registrationData.accepts_promotions,
+            password: registrationData.password,
+            password_confirmation: registrationData.password_confirmation,
+          }),
         }
       );
 
@@ -235,15 +201,10 @@ const SignUpPage = () => {
 
       if (data.success) {
         setStep(4);
-        // Automatically request email verification code
         await requestVerificationCode(registrationData.email);
       }
     } catch (err) {
       setError(err.message || "An error occurred during registration");
-      if (err.message === "Registration failed" && step === 3) {
-        // Stay on step 3 if registration failed
-        setStep(3);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -414,8 +375,20 @@ const SignUpPage = () => {
               </div>
             </>
           )}
-          {step === 2 && <Step2Form onNext={handleStep2Complete} />}
-          {step === 3 && <Step3Form onNext={handleStep3Complete} />}
+          {step === 2 && (
+            <Step2Form
+              onNext={handleStep2Complete}
+              initialData={userData}
+              errors={validationErrors}
+            />
+          )}
+          {step === 3 && (
+            <Step3Form
+              onNext={handleStep3Complete}
+              initialData={userData}
+              errors={validationErrors}
+            />
+          )}
           {step === 4 && !verificationComplete && (
             <Step4Form
               onVerify={handleVerify}

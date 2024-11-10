@@ -22,7 +22,6 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
       .then((data) => {
         if (data.success && data.data) {
           setCountries(data.data);
-          // Set default country (Nigeria)
           const defaultCountry =
             data.data.find((c) => c.id === "NG") || data.data[0];
           setSelectedCountry(defaultCountry);
@@ -36,22 +35,17 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
   }, []);
 
   const getCountryCode = (countryId) => {
-    switch (countryId) {
-      case "NG":
-        return "+234";
-      case "GH":
-        return "+233";
-      case "US":
-        return "+1";
-      default:
-        return "+234";
-    }
+    const codes = {
+      NG: "+234",
+      GH: "+233",
+      US: "+1",
+    };
+    return codes[countryId] || "+234";
   };
 
-  // Function to strip any country code from the input value
   const stripCountryCode = (input, countryCode) => {
     if (!input) return "";
-    const cleanInput = input.replace(/^\+/, ""); // Remove leading +
+    const cleanInput = input.replace(/^\+/, "");
     if (cleanInput.startsWith(countryCode.slice(1))) {
       return cleanInput.slice(countryCode.length - 1);
     }
@@ -68,7 +62,6 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
         )}
         onChange={(e) => {
           const inputValue = e.target.value;
-          // Only allow numbers
           const numbers = inputValue.replace(/[^\d]/g, "");
           const countryCode = selectedCountry
             ? getCountryCode(selectedCountry.id)
@@ -77,8 +70,8 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
         }}
         placeholder="Enter your Phone number"
         className={`w-full h-12 pl-24 pr-4 text-gray-600 bg-white border ${
-          error ? "border-red-500" : "border-[#E2E8F0]"
-        } rounded-lg focus:outline-none focus:border-blue-200 focus:ring-1 focus:ring-blue-100`}
+          error ? "border-red-500" : "border-gray-300"
+        } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
       />
 
       <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -157,10 +150,47 @@ const Step2Form = ({
     gender: initialFormData?.gender || "",
     email: initialFormData?.email || "",
     phone_number: initialFormData?.phone_number || "",
+    country_id: "NG", // Default country ID
   });
+
   const [isGenderOpen, setIsGenderOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.first_name.trim()) {
+      errors.first_name = "First name is required";
+    }
+
+    if (!formData.last_name.trim()) {
+      errors.last_name = "Last name is required";
+    }
+
+    if (!formData.kingschat_username.trim()) {
+      errors.kingschat_username = "KingsChat username is required";
+    } else if (!/^[a-zA-Z0-9._]+$/.test(formData.kingschat_username)) {
+      errors.kingschat_username =
+        "Username can only contain letters, numbers, dots, and underscores";
+    }
+
+    if (!formData.gender) {
+      errors.gender = "Gender is required";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.phone_number.trim()) {
+      errors.phone_number = "Phone number is required";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -176,47 +206,23 @@ const Step2Form = ({
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setValidationErrors({});
 
-    const registrationData = {
-      ...formData,
-      country_id: "NG",
-      accepts_promotions: true,
-      password: "Password_12!",
-      password_confirmation: "Password_12!",
-    };
+    // Only validate and pass the form data to parent
+    if (validateForm()) {
+      // Pass only the necessary fields to the next step
+      const formDataToSubmit = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        kingschat_username: formData.kingschat_username,
+        gender: formData.gender,
+        email: formData.email,
+        phone_number: formData.phone_number,
+        country_id: formData.country_id,
+      };
 
-    try {
-      const response = await fetch(`${BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(registrationData),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        onNext(data.data);
-      } else {
-        // Handle validation errors
-        if (data.error?.fields) {
-          setValidationErrors(data.error.fields);
-        }
-        console.error("Registration failed:", data);
-      }
-    } catch (error) {
-      console.error("Error during registration:", error);
-      setValidationErrors({
-        general: "An error occurred during registration. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
+      onNext(formDataToSubmit);
     }
   };
 
@@ -230,12 +236,6 @@ const Step2Form = ({
   return (
     <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-lg">
       <h2 className="text-xl font-semibold mb-6">Setup your account</h2>
-
-      {validationErrors.general && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-          {validationErrors.general}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-4 mb-4">
@@ -396,7 +396,6 @@ const Step2Form = ({
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded transition-colors text-sm hover:bg-blue-600 disabled:bg-gray-300"
           disabled={
-            isSubmitting ||
             !formData.first_name ||
             !formData.last_name ||
             !formData.kingschat_username ||
@@ -405,7 +404,7 @@ const Step2Form = ({
             !formData.phone_number
           }
         >
-          {isSubmitting ? "Setting up your account..." : "Continue"}
+          Continue
         </button>
       </form>
     </div>
