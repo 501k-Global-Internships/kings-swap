@@ -1,18 +1,34 @@
 "use client";
+// app/newPassword/page.js
+import { Suspense } from "react";
+
+// Create a wrapper component for the main content
+const NewPasswordWrapper = () => (
+  <Suspense
+    fallback={
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    }
+  >
+    <NewPasswordContent />
+  </Suspense>
+);
+
+// Move your existing component here and rename it
 
 import React, { useState } from "react";
 import bgImage from "../assets/password-bg.svg";
 import Img2 from "../assets/vector-img.svg";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
-const NewPassword = () => {
+const NewPasswordContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const email = searchParams.get("email");
-  const code = searchParams.get("code");
+  const email = searchParams?.get("email");
+  const code = searchParams?.get("code");
 
   const [formData, setFormData] = useState({
     password: "",
@@ -22,6 +38,7 @@ const NewPassword = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,6 +73,7 @@ const NewPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     if (!validateForm()) {
       return;
@@ -84,12 +102,10 @@ const NewPassword = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Show success message before redirect
-        setError("");
-        // You might want to show a success message here
+        setSuccessMessage("Password reset successful! Redirecting to login...");
         setTimeout(() => {
           router.push("/login");
-        }, 1500); // Give user time to see success message
+        }, 1500);
       } else {
         setError(data.message || "Failed to reset password. Please try again.");
       }
@@ -139,6 +155,11 @@ const NewPassword = () => {
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
+            </div>
+          )}
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+              {successMessage}
             </div>
           )}
           <form onSubmit={handleSubmit}>
@@ -248,4 +269,8 @@ const NewPassword = () => {
   );
 };
 
-export default NewPassword;
+// Export the wrapper component as the default export
+export default NewPasswordWrapper;
+
+// Add dynamic config
+export const dynamic = "force-dynamic";

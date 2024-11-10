@@ -1,4 +1,16 @@
 "use client";
+// app/resetConfirmation/page.js
+import { Suspense } from "react";
+
+// Create a wrapper component for the main content
+const ResetConfirmationWrapper = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <ResetConfirmationContent />
+  </Suspense>
+);
+
+// Move your existing component here and rename it
+
 import React, { useState, useEffect } from "react";
 import bgImage from "../assets/password-bg.svg";
 import Link from "next/link";
@@ -6,18 +18,24 @@ import Img2 from "../assets/vector-img.svg";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const ResetConfirmation = () => {
+const ResetConfirmationContent = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email");
-  const code = searchParams.get("code");
+  const email = searchParams?.get("email");
+  const code = searchParams?.get("code");
   const [isPasswordReset, setIsPasswordReset] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const verifyPasswordReset = async () => {
+      if (!email || !code) {
+        setErrorMessage("Missing email or verification code");
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Step 1: Verify the password reset code
         const verifyResetResponse = await fetch(
           "https://cabinet.kingsswap.com.ng/api/v1/auth/password-reset/verify",
           {
@@ -32,24 +50,36 @@ const ResetConfirmation = () => {
             }),
           }
         );
+
         const verifyResetData = await verifyResetResponse.json();
+
         if (verifyResetResponse.ok) {
           setIsPasswordReset(true);
         } else {
-          setErrorMessage(verifyResetData.message);
+          setErrorMessage(
+            verifyResetData.message || "Password reset verification failed"
+          );
         }
       } catch (error) {
         console.error("Error verifying password reset:", error);
         setErrorMessage(
           "An error occurred while verifying the password reset. Please try again later."
         );
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    if (email && code) {
-      verifyPasswordReset();
-    }
-  }, [email, code, pathname]);
+    verifyPasswordReset();
+  }, [email, code]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-white">
@@ -83,7 +113,6 @@ const ResetConfirmation = () => {
           </div>
         </div>
       </div>
-
       {/* Right section with confirmation message */}
       <div className="w-full md:w-[45%] flex items-center justify-center p-8">
         <div className="w-full max-w-md px-6">
@@ -112,4 +141,8 @@ const ResetConfirmation = () => {
   );
 };
 
-export default ResetConfirmation;
+// Export the wrapper component as the default export
+export default ResetConfirmationWrapper;
+
+// Add dynamic config
+export const dynamic = "force-dynamic";
