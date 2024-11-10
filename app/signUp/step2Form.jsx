@@ -81,14 +81,14 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center space-x-1 px-1 py-0.5 rounded hover:bg-gray-50 focus:outline-none"
+            className="flex items-center gap-[.2rem] space-x-0 px-[.25rem] py-1.5 rounded bg-[#E5E5E5] focus:outline-none"
           >
             {selectedCountry && (
               <>
                 <img
                   src={selectedCountry.flag_url}
                   alt={selectedCountry.name}
-                  className="w-5 h-4 object-cover"
+                  className="w-5 h-5 rounded-full object-cover"
                 />
                 <span className="text-sm text-gray-600">
                   {getCountryCode(selectedCountry.id)}
