@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation"; // Changed from next/router
@@ -7,6 +7,7 @@ import Img2 from "../assets/vector-img.svg";
 import Img3 from "../assets/kings-chat.svg";
 import bgImg from "../assets/sea-bg.svg";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -159,31 +160,10 @@ const LoginPage = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M2.5 10C2.5 10 5 4.16667 10 4.16667C15 4.16667 17.5 10 17.5 10C17.5 10 15 15.8333 10 15.8333C5 15.8333 2.5 10 2.5 10Z"
-                        stroke="#718096"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M10 12.0833C11.1506 12.0833 12.0833 11.1506 12.0833 10C12.0833 8.84943 11.1506 7.91667 10 7.91667C8.84943 7.91667 7.91667 8.84943 7.91667 10C7.91667 11.1506 8.84943 12.0833 10 12.0833Z"
-                        stroke="#718096"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                   </button>
                 </div>
               </div>

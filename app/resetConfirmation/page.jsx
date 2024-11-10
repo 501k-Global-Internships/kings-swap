@@ -1,5 +1,4 @@
 "use client";
-// app/resetConfirmation/page.js
 import { Suspense } from "react";
 
 // Create a wrapper component for the main content
@@ -8,8 +7,6 @@ const ResetConfirmationWrapper = () => (
     <ResetConfirmationContent />
   </Suspense>
 );
-
-// Move your existing component here and rename it
 
 import React, { useState, useEffect } from "react";
 import bgImage from "../assets/password-bg.svg";
@@ -141,7 +138,6 @@ const ResetConfirmationContent = () => {
   );
 };
 
-// Export the wrapper component as the default export
 export default ResetConfirmationWrapper;
 
 // Add dynamic config
