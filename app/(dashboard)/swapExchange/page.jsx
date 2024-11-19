@@ -9,16 +9,47 @@ import Close from "../../assets/close-circle.svg";
 import Info from "../../assets/info-circle.svg";
 import SwapBg from "../../assets/swapbg.svg";
 import Logo from "../../assets/logo2.svg";
+import { useExchange } from "@/app/api/config";
 
 export default function CurrencyExchange() {
+  const router = useRouter();
+  const {
+    loading: apiLoading,
+    error: apiError,
+    banks,
+    rates,
+    fetchBanks,
+    fetchRates,
+    resolveAccount: resolveAccountApi,
+  } = useExchange();
+
   const [step, setStep] = useState(1);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [currency, setCurrency] = useState("Naira");
+  const [currency, setCurrency] = useState("NGN");
   const [showDropdown, setShowDropdown] = useState(false);
-  const router = useRouter();
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    espeeAmount: "",
+    accountName: "",
+    accountNumber: "",
+    bankId: "",
+    localAmount: "",
+  });
 
-  const currencies = ["Naira", "Pounds", "Dollar"];
+  // Fetch banks and rates on component mount
+  useEffect(() => {
+    const initializePage = async () => {
+      try {
+        await Promise.all([fetchBanks(), fetchRates()]);
+      } catch (err) {
+        setError("Failed to initialize page data");
+      }
+    };
 
+    initializePage();
+  }, [fetchBanks, fetchRates]);
+
+  // Timer effect
   useEffect(() => {
     let timer;
     if (step === 3 && timeLeft > 0) {
@@ -35,30 +66,142 @@ export default function CurrencyExchange() {
     return () => clearInterval(timer);
   }, [step, timeLeft]);
 
-  const handleContinue = () => {
-    setStep((prev) => prev + 1);
-  };
-
-  const handleCancel = () => {
-    setStep(1);
-    setTimeLeft(20);
-  };
-
-  const handleNewTransaction = () => {
-    setStep(1);
-    setTimeLeft(10);
-  };
-
   const handleBack = () => {
     if (step === 1) {
       router.push("/dashboard");
-    } else if (step > 1) {
+    } else {
       setStep((prev) => prev - 1);
     }
   };
 
+  const handleCancel = () => {
+    setFormData({
+      espeeAmount: "",
+      accountName: "",
+      accountNumber: "",
+      bankId: "",
+      localAmount: "",
+    });
+    setStep(1);
+  };
+
+  const handleNewTransaction = () => {
+    setFormData({
+      espeeAmount: "",
+      accountName: "",
+      accountNumber: "",
+      bankId: "",
+      localAmount: "",
+    });
+    setTimeLeft(30);
+    setStep(1);
+  };
+
   const goToDashboard = () => {
     router.push("/dashboard");
+  };
+
+  const calculateLocalAmount = (espeeAmount, selectedCurrency) => {
+    if (!rates || !rates[selectedCurrency] || !espeeAmount) return "";
+    const rate = rates[selectedCurrency];
+    return (parseFloat(espeeAmount) * rate).toFixed(2);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "espeeAmount") {
+      // Validate that input is a positive number
+      if (value && (!isFinite(value) || value <= 0)) {
+        setError("Please enter a valid positive amount");
+        return;
+      }
+
+      const localAmount = calculateLocalAmount(value, currency);
+      setFormData((prev) => ({
+        ...prev,
+        espeeAmount: value,
+        localAmount,
+      }));
+      setError(""); // Clear error if input is valid
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleCurrencyChange = (selectedCurrency) => {
+    setCurrency(selectedCurrency);
+    setShowDropdown(false);
+
+    // Recalculate local amount with new currency
+    const localAmount = calculateLocalAmount(
+      formData.espeeAmount,
+      selectedCurrency
+    );
+    setFormData((prev) => ({
+      ...prev,
+      localAmount,
+    }));
+  };
+
+  const handleAccountNumberBlur = async () => {
+    if (formData.bankId && formData.accountNumber.length === 10) {
+      try {
+        const data = await resolveAccountApi(
+          formData.bankId,
+          formData.accountNumber
+        );
+        setFormData((prev) => ({
+          ...prev,
+          accountName: data.account_name,
+        }));
+        setError(""); // Clear any previous errors
+      } catch (err) {
+        setError("Failed to resolve account");
+      }
+    }
+  };
+
+  const validateStep = () => {
+    if (step === 1) {
+      if (!formData.espeeAmount || parseFloat(formData.espeeAmount) <= 0) {
+        setError("Please enter a valid ESPEE amount");
+        return false;
+      }
+      if (!formData.localAmount || parseFloat(formData.localAmount) <= 0) {
+        setError("Invalid conversion amount");
+        return false;
+      }
+    }
+
+    if (step === 2) {
+      if (!formData.accountNumber || formData.accountNumber.length !== 10) {
+        setError("Please enter a valid 10-digit account number");
+        return false;
+      }
+      if (!formData.bankId) {
+        setError("Please select a bank");
+        return false;
+      }
+      if (!formData.accountName) {
+        setError("Account name is required");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleContinue = () => {
+    if (!validateStep()) {
+      return;
+    }
+
+    setError("");
+    setStep((prev) => prev + 1);
   };
 
   const renderStepContent = () => {
@@ -69,13 +212,23 @@ export default function CurrencyExchange() {
             <h2 className="text-[1.4rem] mb-4 text-[#434343] font-bold">
               Enter amount of ESPEE to exchange
             </h2>
+            {error && (
+              <p className="text-red-500 mb-4 text-sm bg-red-50 p-2 rounded">
+                {error}
+              </p>
+            )}
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Enter amount</p>
                 <div className="relative">
                   <input
-                    type="text"
-                    defaultValue="10.05"
+                    type="number"
+                    name="espeeAmount"
+                    value={formData.espeeAmount}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
                     className="w-full p-3 pr-16 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
@@ -87,8 +240,10 @@ export default function CurrencyExchange() {
               <div className="relative">
                 <input
                   type="text"
-                  defaultValue="16500.0"
+                  value={formData.localAmount}
+                  readOnly
                   className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0.00"
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center">
                   <button
@@ -99,16 +254,13 @@ export default function CurrencyExchange() {
                   </button>
                 </div>
 
-                {showDropdown && (
-                  <div className="absolute right-0 mt-1 w-32 bg-gray-700 text-[#FFFFFF] border rounded shadow-lg z-10">
-                    {currencies.map((curr) => (
+                {showDropdown && rates && (
+                  <div className="absolute right-0 mt-1 w-32 bg-gray-700 text-white border rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {Object.keys(rates).map((curr) => (
                       <div
                         key={curr}
-                        onClick={() => {
-                          setCurrency(curr);
-                          setShowDropdown(false);
-                        }}
-                        className="p-2 hover:bg-[#636161] cursor-pointer"
+                        onClick={() => handleCurrencyChange(curr)}
+                        className="p-2 hover:bg-gray-600 cursor-pointer transition-colors"
                       >
                         {curr}
                       </div>
@@ -116,59 +268,68 @@ export default function CurrencyExchange() {
                   </div>
                 )}
               </div>
-
-              <p className="text-sm text-gray-600">
-                Trading fee (<span style={{ color: "#F63D3D" }}>0.05%</span>)
-              </p>
             </div>
+
             <button
               onClick={handleContinue}
-              className="w-full bg-[#2467E3] text-[#FFFFFF] p-3 rounded mt-6"
+              disabled={
+                apiLoading || !formData.espeeAmount || !formData.localAmount
+              }
+              className={`w-full p-3 rounded mt-6 transition-colors ${
+                apiLoading || !formData.espeeAmount || !formData.localAmount
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-[#2467E3] text-white hover:bg-[#1e51b3]"
+              }`}
             >
-              continue
+              {apiLoading ? "Loading..." : "Continue"}
             </button>
           </div>
         );
+
       case 2:
         return (
           <div className="shadow-sm max-w-md mx-auto">
-            <div className="bg-[#FFFFFF] rounded-lg border mb-3">
+            <div className="bg-white rounded-lg border mb-3">
               <div className="p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-[#434343] whitespace-nowrap">
                   Total amount payable in Espees:{" "}
-                  <span className="font-semibold">10.5 Espee(s)</span>
+                  <span className="font-semibold">
+                    {formData.espeeAmount} Espee(s)
+                  </span>
                 </p>
                 <p className="text-sm text-[#434343] mt-2 whitespace-nowrap">
-                  Amount to receive in Naira:{" "}
-                  <span className="font-semibold">₦16500.0</span>
+                  Amount to receive in {currency}:{" "}
+                  <span className="font-semibold">
+                    {formData.localAmount} {currency}
+                  </span>
                 </p>
               </div>
             </div>
-            <div className="py-3 px-3 bg-[#FFFFFF] rounded-lg border">
+
+            <div className="py-3 px-3 bg-white rounded-lg border">
               <h2 className="text-xl font-semibold mb-4">
                 Enter your Receiving account
               </h2>
+              {error && (
+                <p className="text-red-500 mb-4 text-sm bg-red-50 p-2 rounded">
+                  {error}
+                </p>
+              )}
 
               <form className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">
-                    Account name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter your name as Displayed on your account"
-                    className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6] placeholder-[#909CC6]"
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">
                     Account number
                   </label>
                   <input
                     type="text"
+                    name="accountNumber"
+                    value={formData.accountNumber}
+                    onChange={handleInputChange}
+                    onBlur={handleAccountNumberBlur}
                     placeholder="Enter your account number"
-                    className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6] placeholder-[#909CC6]"
+                    maxLength={10}
+                    className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent"
                   />
                 </div>
 
@@ -177,29 +338,70 @@ export default function CurrencyExchange() {
                     Bank
                   </label>
                   <div className="relative">
-                    <select className="w-full p-3 border border-gray-300 rounded appearance-none focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent text-[#909CC6]">
-                      <option>select Bank</option>
+                    <select
+                      name="bankId"
+                      value={formData.bankId}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border border-gray-300 rounded appearance-none focus:outline-none focus:ring-2 focus:ring-[#ABB5FF] focus:border-transparent"
+                    >
+                      <option value="">Select Bank</option>
+                      {banks &&
+                        banks.map((bank) => (
+                          <option key={bank.id} value={bank.id}>
+                            {bank.name}
+                          </option>
+                        ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">
+                    Account name
+                  </label>
+                  <input
+                    type="text"
+                    name="accountName"
+                    value={formData.accountName}
+                    readOnly
+                    placeholder="Account name will appear here"
+                    className="w-full p-3 border border-gray-300 rounded bg-gray-50"
+                  />
                 </div>
               </form>
 
               <button
                 onClick={handleContinue}
-                className="w-full bg-[#C8C8C8] text-[#909CC6] p-3 rounded mt-6 focus:outline-none focus:ring-2 focus:ring-[#EAEAEA]"
+                disabled={
+                  apiLoading ||
+                  !formData.accountName ||
+                  !formData.accountNumber ||
+                  !formData.bankId
+                }
+                className={`w-full p-3 rounded mt-6 transition-colors ${
+                  apiLoading ||
+                  !formData.accountName ||
+                  !formData.accountNumber ||
+                  !formData.bankId
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-[#2467E3] text-white hover:bg-[#1e51b3]"
+                }`}
               >
-                continue
+                {apiLoading ? "Validating..." : "Continue"}
               </button>
             </div>
           </div>
         );
+
       case 3:
         return (
           <div className="text-center max-w-md mx-auto">
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <p className="font-medium mb-2">YOU WILL RECEIVE ₦50,000</p>
-              <p className="mb-4">TRANSFER 50.00 ESPEES TO</p>
+              <p className="font-medium mb-2">
+                YOU WILL RECEIVE {formData.localAmount} {currency}
+              </p>
+              <p className="mb-4">TRANSFER {formData.espeeAmount} ESPEES TO</p>
               <div className="flex items-center justify-center mb-4">
                 <p className="text-orange-500 mr-2 break-all">
                   0xd3349300fafe5e9aee8e80c2f8f69823744ba6ed
@@ -210,6 +412,11 @@ export default function CurrencyExchange() {
                   height={20}
                   alt="Copy"
                   className="cursor-pointer"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      "0xd3349300fafe5e9aee8e80c2f8f69823744ba6ed"
+                    );
+                  }}
                 />
               </div>
               <Image

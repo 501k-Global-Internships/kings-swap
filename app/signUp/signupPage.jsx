@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,274 +13,42 @@ import Step4Form from "./step4Form";
 import SuccessMessage from "./successMessage";
 import KingsChat from "../assets/kings-chat.svg";
 import bgImg from "../assets/signup.svg";
+import { useSignUpForm } from "../api/useSignUpForm";
+
 
 const SignUpPage = () => {
-  const [step, setStep] = useState(1);
-  const [verificationComplete, setVerificationComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [userData, setUserData] = useState({
-    country_id: "",
-    first_name: "",
-    last_name: "",
-    email: "",
-    kingschat_username: "",
-    gender: "",
-    phone_number: "",
-    accepts_promotions: false,
-    password: "",
-    password_confirmation: "",
-  });
-
-  const validateStep2 = (data) => {
-    const errors = {};
-
-    if (!data.first_name?.trim()) {
-      errors.first_name = ["First name is required"];
-    }
-
-    if (!data.last_name?.trim()) {
-      errors.last_name = ["Last name is required"];
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!data.email) {
-      errors.email = ["Email is required"];
-    } else if (!emailRegex.test(data.email)) {
-      errors.email = ["Please enter a valid email address"];
-    }
-
-    const usernameRegex = /^[a-zA-Z0-9._]+$/;
-    if (!data.kingschat_username) {
-      errors.kingschat_username = ["Username is required"];
-    } else if (
-      !data.kingschat_username.match(usernameRegex) ||
-      data.kingschat_username.length < 4 ||
-      data.kingschat_username.length > 32
-    ) {
-      errors.kingschat_username = [
-        "Username must be 4-32 characters and can only contain letters, numbers, dots, and underscores",
-      ];
-    }
-
-    if (!data.gender) {
-      errors.gender = ["Gender is required"];
-    }
-
-    const phoneRegex = /^\+[0-9]{10,15}$/;
-    if (!data.phone_number) {
-      errors.phone_number = ["Phone number is required"];
-    } else if (!phoneRegex.test(data.phone_number)) {
-      errors.phone_number = [
-        "Please enter a valid phone number with country code (e.g., +1234567890)",
-      ];
-    }
-
-    return errors;
-  };
-
-  const validateStep3 = (data) => {
-    const errors = {};
-
-    if (!data.password) {
-      errors.password = ["Password is required"];
-    } else if (data.password.length < 8) {
-      errors.password = ["Password must be at least 8 characters long"];
-    }
-
-    if (!data.password_confirmation) {
-      errors.password_confirmation = ["Please confirm your password"];
-    } else if (data.password !== data.password_confirmation) {
-      errors.password = ["Passwords do not match"];
-    }
-
-    return errors;
-  };
+  const {
+    formData,
+    errors,
+    isLoading,
+    countries,
+    step,
+    verificationComplete,
+    handleStep1,
+    handleStep2,
+    handleStep3,
+    handleStep4,
+    handleResendOTP,
+  } = useSignUpForm();
 
   const handleStep1Complete = (countryData) => {
-    setValidationErrors({});
-    setError(null);
-
-    if (!countryData?.id) {
-      setError("Please select a country");
-      return;
-    }
-
-    setUserData((prev) => ({
-      ...prev,
-      country_id: countryData.id.toLowerCase(),
-    }));
-    setStep(2);
+    handleStep1(countryData);
   };
 
   const handleStep2Complete = (formData) => {
-    setValidationErrors({});
-    setError(null);
-
-    const updatedUserData = {
-      ...userData,
-      first_name: formData.first_name?.trim() || "",
-      last_name: formData.last_name?.trim() || "",
-      email: formData.email?.toLowerCase().trim() || "",
-      kingschat_username: formData.kingschat_username?.trim() || "",
-      gender: formData.gender || "",
-      phone_number: formData.phone_number?.trim() || "",
-    };
-
-    const errors = validateStep2(updatedUserData);
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-
-    setUserData(updatedUserData);
-    setStep(3);
+    handleStep2(formData);
   };
 
-  const handleStep3Complete = (step3Data) => {
-    setValidationErrors({});
-    setError(null);
-
-    const updatedUserData = {
-      ...userData,
-      accepts_promotions: step3Data.accepts_promotions || false,
-      password: step3Data.password || "",
-      password_confirmation: step3Data.password_confirmation || "",
-    };
-
-    const errors = validateStep3(updatedUserData);
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-
-    handleRegistration(updatedUserData);
-  };
-
-  const handleRegistration = async (registrationData) => {
-    setIsLoading(true);
-    setError(null);
-    setValidationErrors({});
-
-    try {
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            country_id: registrationData.country_id,
-            first_name: registrationData.first_name,
-            last_name: registrationData.last_name,
-            email: registrationData.email,
-            kingschat_username: registrationData.kingschat_username,
-            gender: registrationData.gender,
-            phone_number: registrationData.phone_number,
-            accepts_promotions: registrationData.accepts_promotions,
-            password: registrationData.password,
-            password_confirmation: registrationData.password_confirmation,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 422 && data.errors) {
-          setValidationErrors(data.errors);
-          throw new Error("Please check the form for errors.");
-        }
-        throw new Error(data.message || "Registration failed");
-      }
-
-      if (data.success) {
-        setStep(4);
-        await requestVerificationCode(registrationData.email);
-      }
-    } catch (err) {
-      setError(err.message || "An error occurred during registration");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const requestVerificationCode = async (email) => {
-    try {
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/request",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to send verification code");
-      }
-    } catch (err) {
-      setError("Failed to send verification code. Please try again.");
-    }
+  const handleStep3Complete = async (passwordData) => {
+    await handleStep3(passwordData);
   };
 
   const handleVerify = async (code) => {
-    if (!code) {
-      setError("Please enter the verification code");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setValidationErrors({});
-
-    try {
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/verify",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email: userData.email,
-            code: code,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 422 && data.errors) {
-          setValidationErrors(data.errors);
-          throw new Error("Invalid verification code.");
-        }
-        throw new Error(data.message || "Verification failed");
-      }
-
-      if (data.success) {
-        setVerificationComplete(true);
-      }
-    } catch (err) {
-      setError(err.message || "Verification failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    await handleStep4(code);
   };
 
   const handleResendCode = async () => {
-    await requestVerificationCode(userData.email);
+    await handleResendOTP();
   };
 
   return (
@@ -319,27 +87,20 @@ const SignUpPage = () => {
           </div>
         </div>
 
-        {/* Error and Validation Displays */}
-        {(error || Object.keys(validationErrors).length > 0) && (
+        {/* Error Display */}
+        {Object.keys(errors).length > 0 && (
           <div className="absolute top-20 w-full max-w-md px-4">
-            {error && (
-              <Alert variant="destructive" className="mb-2">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {Object.keys(validationErrors).length > 0 && (
-              <Alert variant="destructive">
-                <AlertDescription>
-                  <ul className="list-disc pl-4">
-                    {Object.entries(validationErrors).map(([field, errors]) => (
-                      <li key={field} className="text-sm">
-                        {errors[0]}
-                      </li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
+            <Alert variant="destructive">
+              <AlertDescription>
+                <ul className="list-disc pl-4">
+                  {Object.entries(errors).map(([field, messages]) => (
+                    <li key={field} className="text-sm">
+                      {Array.isArray(messages) ? messages[0] : messages}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
           </div>
         )}
 
@@ -354,7 +115,7 @@ const SignUpPage = () => {
         <div className="flex flex-col justify-center items-center w-full h-full p-8">
           {step === 1 && (
             <>
-              <Step1Form onNext={handleStep1Complete} />
+              <Step1Form onNext={handleStep1Complete} countries={countries} />
               <p className="text-sm text-[#7F7F7F] mt-4">
                 Have an account?{" "}
                 <Link href="/loginPage" className="text-[#434343] underline">
@@ -378,15 +139,16 @@ const SignUpPage = () => {
           {step === 2 && (
             <Step2Form
               onNext={handleStep2Complete}
-              initialData={userData}
-              errors={validationErrors}
+              initialData={formData}
+              errors={errors}
             />
           )}
           {step === 3 && (
             <Step3Form
               onNext={handleStep3Complete}
-              initialData={userData}
-              errors={validationErrors}
+              formData={formData}
+              errors={errors}
+              isLoading={isLoading}
             />
           )}
           {step === 4 && !verificationComplete && (
@@ -394,6 +156,7 @@ const SignUpPage = () => {
               onVerify={handleVerify}
               onResendCode={handleResendCode}
               isLoading={isLoading}
+              error={errors.general?.[0]}
             />
           )}
           {step === 4 && verificationComplete && <SuccessMessage />}

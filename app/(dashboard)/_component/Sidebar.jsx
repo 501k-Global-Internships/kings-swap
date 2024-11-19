@@ -1,8 +1,8 @@
-'use client'
+"use client";
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Home from "../../assets/home.svg";
 import FileText from "../../assets/transactions.svg";
 import Receipt from "../../assets/receipt-item.svg";
@@ -28,6 +28,7 @@ const SidebarItem = ({ icon: Icon, text, path, isActive, onClick }) => {
       <span className="hidden md:inline">{text}</span>
     </div>
   );
+
   if (onClick) {
     return <div onClick={onClick}>{content}</div>;
   }
@@ -36,22 +37,55 @@ const SidebarItem = ({ icon: Icon, text, path, isActive, onClick }) => {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const router = useRouter();
+
   const menuItems = [
     { icon: Home, text: "Home", path: "/dashboard" },
     { icon: FileText, text: "Transactions", path: "/transactionPage" },
     { icon: Receipt, text: "Receipts", path: "/receipts" },
   ];
 
-  const handleLogout = () => {
-    // Add your logout logic here
-    console.log("Logging out...");
+  const handleLogout = async () => {
+    try {
+      // Clear any stored authentication tokens from localStorage
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userData");
+
+      // Clear any cookies if you're using them
+      document.cookie.split(";").forEach((cookie) => {
+        document.cookie = cookie
+          .replace(/^ +/, "")
+          .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+      });
+
+      // If you have an API endpoint for logout, call it here
+      // const response = await fetch('/api/auth/logout', {
+      //   method: 'POST',
+      //   credentials: 'include',
+      // });
+
+      // If you're using any state management (like Redux), clear the state here
+      // dispatch(clearAuthState());
+
+      // Show a success message (optional)
+      alert("Logged out successfully");
+
+      // Redirect to login page
+      router.push("/loginPage");
+
+      // If you need to force a hard reload after logout
+      // window.location.href = '/login';
+    } catch (error) {
+      console.error("Logout error:", error);
+      alert("Error during logout. Please try again.");
+    }
   };
 
   return (
     <div
-      className={`fixed h-full bg-white p-4 transition-all duration-300 ease-in-out z-20 
-                    ${isOpen ? "left-0" : "-left-64"} 
-                    md:left-0 md:w-20 lg:w-64`}
+      className={`fixed h-full bg-white p-4 transition-all duration-300 ease-in-out z-20
+                  ${isOpen ? "left-0" : "-left-64"}
+                  md:left-0 md:w-20 lg:w-64`}
     >
       <div className="mb-8 h-[4.4rem] flex justify-center md:justify-start">
         <Image

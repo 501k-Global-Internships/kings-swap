@@ -25,7 +25,6 @@ const Step3Form = ({
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  // Update local errors when server errors change
   useEffect(() => {
     if (Object.keys(serverErrors).length > 0) {
       setErrors((prev) => ({
@@ -58,18 +57,21 @@ const Step3Form = ({
     setErrors((prev) => ({
       ...prev,
       [name]: undefined,
-      // Clear related server errors
       password: name === "password" ? undefined : prev.password,
       confirmPassword:
         name === "confirmPassword" ? undefined : prev.confirmPassword,
     }));
+
+    if (apiError) {
+      setApiError(null);
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
     if (!isPasswordValid) {
-      newErrors.password = "Password does not meet requirements";
+      newErrors.password = "Password does not meet the required criteria";
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -91,36 +93,43 @@ const Step3Form = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError(null);
+    setIsLoading(true);
 
     if (!validateForm()) {
+      setIsLoading(false);
       return;
     }
 
     try {
-      onNext({
+      // Format the data according to the API specification
+      const formPayload = {
         password: formData.password,
         password_confirmation: formData.confirmPassword,
         accepts_promotions: formData.acceptsPromotions,
-      });
+      };
+
+      // Call the parent's onNext function with the formatted payload
+      await onNext(formPayload);
     } catch (error) {
+      console.error("Form submission error:", error);
       setApiError(
         error.message ||
-          "An error occurred during registration. Please try again."
+          "Registration failed. Please check your information and try again."
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Error message component
   const ErrorMessage = ({ message }) => (
     <div className="flex items-start gap-2 mt-2 text-red-500">
       <AlertCircle className="h-4 w-4 mt-0.5" />
       <span className="text-sm">{message}</span>
     </div>
   );
-
+  
   return (
     <div className="w-full max-w-md">
-      {/* Global Error Alert - Positioned above the form */}
       {apiError && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{apiError}</AlertDescription>
@@ -134,13 +143,13 @@ const Step3Form = ({
         <h2 className="text-xl font-semibold mb-6">Create password</h2>
 
         <div className="space-y-6">
-          {/* Password Field */}
           <div>
             <label className="block text-sm text-gray-600 mb-1">Password</label>
             <div className="relative">
               <input
                 type={showPassword.password ? "text" : "password"}
                 name="password"
+                autocomplete="new-password"
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Enter your password"
@@ -166,7 +175,6 @@ const Step3Form = ({
               </button>
             </div>
 
-            {/* Password Requirements */}
             <div className="mt-2 space-y-1">
               {Object.entries(passwordRequirements).map(
                 ([requirement, isMet]) => (
@@ -193,7 +201,6 @@ const Step3Form = ({
             {errors.password && <ErrorMessage message={errors.password} />}
           </div>
 
-          {/* Confirm Password Field */}
           <div>
             <label className="block text-sm text-gray-600 mb-1">
               Confirm password
@@ -202,6 +209,7 @@ const Step3Form = ({
               <input
                 type={showPassword.confirm ? "text" : "password"}
                 name="confirmPassword"
+                autocomplete="new-password"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 placeholder="Confirm your password"
@@ -231,7 +239,6 @@ const Step3Form = ({
             )}
           </div>
 
-          {/* Accept Promotions Checkbox */}
           <div>
             <label className="flex items-center">
               <input
@@ -248,7 +255,6 @@ const Step3Form = ({
             </label>
           </div>
 
-          {/* Accept Terms Checkbox */}
           <div>
             <label className="flex items-center">
               <input
@@ -276,7 +282,6 @@ const Step3Form = ({
             )}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={parentIsLoading || isLoading}

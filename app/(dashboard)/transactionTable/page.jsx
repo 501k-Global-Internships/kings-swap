@@ -1,113 +1,64 @@
-// File: components/TransactionTable.js
-import React from "react";
-
-const TableHeader = () => (
-  <div className="flex items-center p-3 mb-4 border border-gray-500 rounded-[1rem] text-sm text-gray-500">
-    <div className="flex-1">Date</div>
-    <div className="flex-1">Amount</div>
-    <div className="flex-1">Description</div>
-    <div className="flex-1 text-right">Status</div>
-  </div>
-);
-
-const TransactionRow = ({ transaction }) => (
-  <div className="flex items-center py-3 text-sm">
-    <div className="flex-1">{transaction.date}</div>
-    <div
-      className={`flex-1 ${
-        transaction.status.toLowerCase() === "failed"
-          ? "text-red-500"
-          : "text-green-500"
-      }`}
-    >
-      {transaction.amount}
-    </div>
-    <div className="flex-1">{transaction.description}</div>
-    <div
-      className={`flex-1 text-right ${
-        transaction.status.toLowerCase() === "failed"
-          ? "text-red-500"
-          : "text-green-500"
-      }`}
-    >
-      {transaction.status}
-    </div>
-  </div>
-);
+'use client'
+import React, { useState, useEffect } from "react";
+import apiService from "../../api/config";
 
 const TransactionTable = () => {
-  const transactions = [
-    {
-      date: "12-may-24",
-      amount: "₦ 5,000",
-      description: "Paid through bank -t",
-      status: "success",
-    },
-    {
-      date: "12-may-24",
-      amount: "₦ 5,000",
-      description: "Paid through bank -t",
-      status: "success",
-    },
-    {
-      date: "12-may-24",
-      amount: "₦ 5,000",
-      description: "Paid through bank -t",
-      status: "success",
-    },
-    {
-      date: "06-Apr-24",
-      amount: "₦ 3,400",
-      description: "Paid through e-wallet",
-      status: "Failed",
-    },
-    {
-      date: "03-Apr-24",
-      amount: "₦ 7,400",
-      description: "Paid through e-wallet",
-      status: "Failed",
-    },
-    {
-      date: "19-Dec-23",
-      amount: "₦ 10,000",
-      description: "Paid through bank -t",
-      status: "success",
-    },
-    {
-      date: "19-Dec-23",
-      amount: "₦ 1,000",
-      description: "Paid through bank -t",
-      status: "success",
-    },
-    {
-      date: "03-Dec-23",
-      amount: "₦ 7,400",
-      description: "Paid through e-wallet",
-      status: "Failed",
-    },
-    {
-      date: "03-Dec-23",
-      amount: "₦ 7,400",
-      description: "Paid through e-wallet",
-      status: "Failed",
-    },
-    {
-      date: "03-Dec-23",
-      amount: "₦ 7,400",
-      description: "Paid through e-wallet",
-      status: "Failed",
-    },
-  ];
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await apiService.transactions.list();
+
+        if (response && response.data) {
+          setTransactions(response.data);
+        } else {
+          throw new Error("No transactions found");
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Transaction Fetch Error:", err);
+        setError(err.message || "Failed to fetch transactions");
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  if (loading) return <div>Loading transactions...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <TableHeader />
-      <div className="space-y-1">
-        {transactions.map((transaction, index) => (
-          <TransactionRow key={index} transaction={transaction} />
+    <table className="w-full border-collapse">
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="border p-2 text-left">Date</th>
+          <th className="border p-2 text-left">Amount</th>
+          <th className="border p-2 text-left">Description</th>
+          <th className="border p-2 text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {transactions.map((transaction) => (
+          <tr key={transaction.id} className="hover:bg-gray-50">
+            <td className="border p-2">
+              {new Date(transaction.created_at).toLocaleDateString()}
+            </td>
+            <td className="border p-2">
+              ₦ {transaction.total_espee_amount?.toLocaleString() || "N/A"}
+            </td>
+            <td className="border p-2">
+              Transaction to {transaction.destination_currency}
+            </td>
+            <td className="border p-2">{transaction.processing_status}</td>
+          </tr>
         ))}
-      </div>
-    </div>
+      </tbody>
+    </table>
   );
 };
 
