@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+what to work on..
+api
+config and useSignUpForm
+signUp
+step1 to step4
+KingsChat
+loginPage
+swapCard
+swapExchange 
+recentTransactions
+TransactionTables
 ## Getting Started
 
 First, run the development server:

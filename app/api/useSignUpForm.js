@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import apiService from "./config";
-
 
 export const useSignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -30,9 +28,12 @@ export const useSignUpForm = () => {
   const fetchCountries = async () => {
     try {
       const response = await apiService.attributes.getCountries();
-      if (response.success) setCountries(response.data);
+      if (response.data) setCountries(response.data);
     } catch (error) {
       console.error("Failed to fetch countries:", error);
+      setErrors({
+        general: [error.message || "Failed to load countries"],
+      });
     }
   };
 
@@ -135,6 +136,9 @@ export const useSignUpForm = () => {
     setErrors({});
 
     try {
+      // Perform preflight check before registration
+      await apiService.performPreflightCheck();
+
       const validationErrors = validateStep3(passwordData);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
@@ -148,19 +152,20 @@ export const useSignUpForm = () => {
         accepts_promotions: passwordData.accepts_promotions,
       };
 
-      setFormData(updatedFormData);
-
       const result = await apiService.auth.register(updatedFormData);
-      if (result.success) {
+
+      if (result.data.success) {
         await apiService.auth.requestVerification(updatedFormData.email);
         setStep(4);
         return true;
       }
     } catch (error) {
-      if (error.type === "validation") {
-        setErrors(error.errors);
+      if (error.details?.type === "validation") {
+        setErrors(error.details.errors);
       } else {
-        setErrors({ general: [error.message] });
+        setErrors({
+          general: [error.message || "Registration failed"],
+        });
       }
       return false;
     } finally {
@@ -183,15 +188,15 @@ export const useSignUpForm = () => {
         code: code,
       });
 
-      if (result.success) {
+      if (result.data.success) {
         setVerificationComplete(true);
         return true;
       }
     } catch (error) {
       setErrors(
-        error.type === "validation"
-          ? error.errors
-          : { general: [error.message] }
+        error.details?.type === "validation"
+          ? error.details.errors
+          : { general: [error.message || "Verification failed"] }
       );
       return false;
     } finally {
@@ -205,7 +210,9 @@ export const useSignUpForm = () => {
       await apiService.auth.requestVerification(formData.email);
       return true;
     } catch (error) {
-      setErrors({ general: [error.message] });
+      setErrors({
+        general: [error.message || "Failed to resend OTP"],
+      });
       return false;
     } finally {
       setIsLoading(false);

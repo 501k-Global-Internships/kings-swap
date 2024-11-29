@@ -1,10 +1,11 @@
 "use client";
 
+import axios from "axios";
 import { useState, useCallback, useEffect } from "react";
 
 const API_CONFIG = {
-  baseUrl:
-    process.env.NEXT_PUBLIC_API_URL || "https://cabinet.kingsswap.com.ng/",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL || "https://cabinet.kingsswap.com.ng",
   endpoints: {
     auth: {
       register: "/auth/register",
@@ -23,22 +24,24 @@ const API_CONFIG = {
       list: "/api/v1/transactions",
       create: "/api/v1/transactions",
     },
-  },
-  headers: {
-    default: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    multipart: {
-      Accept: "application/json",
-    },
+    preflight: "/ping",
   },
 };
 
 class ApiService {
   constructor(config) {
-    this.config = config;
+    this.axios = axios.create({
+      baseURL: config.baseURL,
+      timeout: 30000,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
+
     this.token = this.getStoredToken();
+    this.setupInterceptors();
   }
 
   getStoredToken() {
@@ -49,129 +52,97 @@ class ApiService {
     this.token = token;
     if (token) {
       localStorage.setItem("token", token);
+      this.axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
       localStorage.removeItem("token");
+      delete this.axios.defaults.headers.common["Authorization"];
     }
   }
 
-  getHeaders(customHeaders = {}) {
-    const headers = {
-      ...this.config.headers.default,
-      ...customHeaders,
-    };
+  setupInterceptors() {
+    // Request interceptor for adding token
+    this.axios.interceptors.request.use(
+      (config) => {
+        const token = this.token || this.getStoredToken();
+        if (token) {
+          config.headers["Authorization"] = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
-    const token = this.token || this.getStoredToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    return headers;
+    // Response interceptor for error handling
+    this.axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response) {
+          // Server responded with an error status
+          return Promise.reject({
+            message: error.response.data.message || "An error occurred",
+            status: error.response.status,
+            details: error.response.data,
+          });
+        } else if (error.request) {
+          // Request made but no response received
+          return Promise.reject(new Error("No response received from server"));
+        } else {
+          // Something happened in setting up the request
+          return Promise.reject(error);
+        }
+      }
+    );
   }
 
-  async request(endpoint, options = {}) {
+  async performPreflightCheck() {
     try {
-      const url = `${this.config.baseUrl}${endpoint}`;
-      const headers = this.getHeaders(options.headers);
-
-      const config = {
-        method: options.method || "GET",
-        headers,
-        credentials: "omit",
-      };
-
-      if (options.data) {
-        config.body = JSON.stringify(options.data);
-      }
-
-      const response = await fetch(url, config);
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        const errorDetails = {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorBody,
-        };
-
-        console.error("API Error Details:", errorDetails);
-
-        throw {
-          type: "api",
-          ...errorDetails,
-          message: `HTTP error! status: ${response.status}`,
-        };
-      }
-
-      return await response.json();
+      await this.axios.head(API_CONFIG.endpoints.preflight, {
+        timeout: 5000,
+      });
+      return true;
     } catch (error) {
-      console.error("API Request Error:", error);
-      throw error;
+      console.error("Preflight Check Failed:", error);
+      throw new Error("Server is currently unavailable");
     }
   }
 
-  async get(endpoint, options = {}) {
-    return this.request(endpoint, { ...options, method: "GET" });
-  }
+  // Authentication methods
+  auth = {
+    register: (data) =>
+      this.axios.post(API_CONFIG.endpoints.auth.register, data),
+    login: (data) => this.axios.post(API_CONFIG.endpoints.auth.login, data),
+    verifyEmail: (data) =>
+      this.axios.post(API_CONFIG.endpoints.auth.verifyEmail, data),
+    requestVerification: (email) =>
+      this.axios.post(API_CONFIG.endpoints.auth.requestVerification, { email }),
+  };
 
-  async post(endpoint, data, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: "POST",
-      data,
-    });
-  }
+  // Attributes methods
+  attributes = {
+    getCountries: () =>
+      this.axios.get(API_CONFIG.endpoints.attributes.countries),
+    getBanks: () => this.axios.get(API_CONFIG.endpoints.attributes.banks),
+    getRates: () => this.axios.get(API_CONFIG.endpoints.attributes.rates),
+    getCurrencies: () =>
+      this.axios.get(API_CONFIG.endpoints.attributes.currencies),
+    resolveAccount: (bankId, accountNumber) =>
+      this.axios.post(API_CONFIG.endpoints.attributes.resolveAccount, {
+        bank_id: bankId,
+        account_number: accountNumber,
+      }),
+  };
 
-  async put(endpoint, data, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: "PUT",
-      data,
-    });
-  }
-
-  async delete(endpoint, options = {}) {
-    return this.request(endpoint, {
-      ...options,
-      method: "DELETE",
-    });
-  }
+  // Transactions methods
+  transactions = {
+    list: () => this.axios.get(API_CONFIG.endpoints.transactions.list),
+    create: (data) =>
+      this.axios.post(API_CONFIG.endpoints.transactions.create, data),
+  };
 }
 
 // Create API service instance
 const apiService = new ApiService(API_CONFIG);
 
-// Authentication module
-apiService.auth = {
-  register: (data) => apiService.post(API_CONFIG.endpoints.auth.register, data),
-  login: (data) => apiService.post(API_CONFIG.endpoints.auth.login, data),
-  verifyEmail: (data) =>
-    apiService.post(API_CONFIG.endpoints.auth.verifyEmail, data),
-  requestVerification: (email) =>
-    apiService.post(API_CONFIG.endpoints.auth.requestVerification, { email }),
-};
-
-// Attributes module
-apiService.attributes = {
-  getCountries: () => apiService.get(API_CONFIG.endpoints.attributes.countries),
-  getBanks: () => apiService.get(API_CONFIG.endpoints.attributes.banks),
-  getRates: () => apiService.get(API_CONFIG.endpoints.attributes.rates),
-  getCurrencies: () =>
-    apiService.get(API_CONFIG.endpoints.attributes.currencies),
-  resolveAccount: (bankId, accountNumber) =>
-    apiService.post(API_CONFIG.endpoints.attributes.resolveAccount, {
-      bank_id: bankId,
-      account_number: accountNumber,
-    }),
-};
-
-// Transactions module
-apiService.transactions = {
-  list: () => apiService.get(API_CONFIG.endpoints.transactions.list),
-  create: (data) =>
-    apiService.post(API_CONFIG.endpoints.transactions.create, data),
-};
-
-// Updated useExchange hook with improved error handling
 export const useExchange = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -182,150 +153,135 @@ export const useExchange = () => {
   const [currencies, setCurrencies] = useState([]);
 
   const handleError = (err) => {
-    let errorMessage;
-    if (typeof err === "string") {
-      errorMessage = err;
-    } else if (err?.message) {
-      errorMessage = err.message;
-    } else if (err?.body) {
-      try {
-        const parsedError = JSON.parse(err.body);
-        errorMessage = parsedError.message || "An error occurred";
-      } catch {
-        errorMessage = err.body;
-      }
-    } else {
-      errorMessage = "An unexpected error occurred";
-    }
+    const errorMessage = err.message || "An unexpected error occurred";
+    console.error("API Error:", err);
     setError(errorMessage);
     return errorMessage;
   };
 
-  const fetchBanks = useCallback(async () => {
+  const fetchWithErrorHandling = async (fetchFunction, errorCallback) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.attributes.getBanks();
-      setBanks(response?.data?.banks || []);
-      return response?.data?.banks || [];
+      return await fetchFunction();
     } catch (err) {
       handleError(err);
-      setBanks([]);
+      if (errorCallback) errorCallback();
       throw err;
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchBanks = useCallback(async () => {
+    return fetchWithErrorHandling(
+      async () => {
+        const response = await apiService.attributes.getBanks();
+        const banks = response?.data?.banks || [];
+        setBanks(banks);
+        return banks;
+      },
+      () => setBanks([])
+    );
   }, []);
 
   const fetchRates = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiService.attributes.getRates();
-      setRates(response?.data || null);
-      return response?.data || null;
-    } catch (err) {
-      handleError(err);
-      setRates(null);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    return fetchWithErrorHandling(
+      async () => {
+        const response = await apiService.attributes.getRates();
+        if (!response?.data) {
+          throw new Error("Invalid rate data received");
+        }
+        setRates(response.data);
+        return response.data;
+      },
+      () => setRates(null)
+    );
   }, []);
 
   const fetchTransactions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiService.transactions.list();
-      setTransactions(response?.data || []);
-      return response?.data || [];
-    } catch (err) {
-      handleError(err);
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
+    return fetchWithErrorHandling(
+      async () => {
+        const response = await apiService.transactions.list();
+        const transactions = response?.data || [];
+        setTransactions(transactions);
+        return transactions;
+      },
+      () => setTransactions([])
+    );
   }, []);
 
   const fetchCountries = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiService.attributes.getCountries();
-      setCountries(response?.data || []);
-      return response?.data || [];
-    } catch (err) {
-      handleError(err);
-      setCountries([]);
-    } finally {
-      setLoading(false);
-    }
+    return fetchWithErrorHandling(
+      async () => {
+        const response = await apiService.attributes.getCountries();
+        const countries = response?.data || [];
+        setCountries(countries);
+        return countries;
+      },
+      () => setCountries([])
+    );
   }, []);
 
   const fetchCurrencies = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiService.attributes.getCurrencies();
-      setCurrencies(response?.data || []);
-      return response?.data || [];
-    } catch (err) {
-      handleError(err);
-      setCurrencies([]);
-    } finally {
-      setLoading(false);
-    }
+    return fetchWithErrorHandling(
+      async () => {
+        const response = await apiService.attributes.getCurrencies();
+        const currencies = response?.data || [];
+        setCurrencies(currencies);
+        return currencies;
+      },
+      () => setCurrencies([])
+    );
   }, []);
 
   const resolveAccount = useCallback(async (bankId, accountNumber) => {
-    try {
-      setLoading(true);
-      setError(null);
+    return fetchWithErrorHandling(async () => {
       const response = await apiService.attributes.resolveAccount(
         bankId,
         accountNumber
       );
       return response?.data || null;
-    } catch (err) {
-      handleError(err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    });
   }, []);
 
   const createTransaction = useCallback(async (transactionData) => {
-    try {
-      setLoading(true);
-      setError(null);
+    return fetchWithErrorHandling(async () => {
       const response = await apiService.transactions.create(transactionData);
       return response?.data || null;
-    } catch (err) {
-      handleError(err);
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    });
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+
     const initializeData = async () => {
       try {
         setError(null);
-        await Promise.all([
-          fetchTransactions(),
-          fetchBanks(),
+        const promises = [
           fetchRates(),
+          fetchBanks(),
           fetchCountries(),
           fetchCurrencies(),
-        ]);
+        ];
+
+        if (apiService.getStoredToken()) {
+          promises.push(fetchTransactions());
+        }
+
+        await Promise.all(promises);
       } catch (err) {
-        handleError(err);
+        if (mounted) {
+          handleError(err);
+        }
       }
     };
 
     initializeData();
+
+    return () => {
+      mounted = false;
+    };
   }, [
     fetchTransactions,
     fetchBanks,
@@ -344,10 +300,10 @@ export const useExchange = () => {
     currencies,
     fetchBanks,
     fetchRates,
-    resolveAccount,
     fetchTransactions,
     fetchCountries,
     fetchCurrencies,
+    resolveAccount,
     createTransaction,
   };
 };

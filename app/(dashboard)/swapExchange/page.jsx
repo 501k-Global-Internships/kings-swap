@@ -11,23 +11,28 @@ import SwapBg from "../../assets/swapbg.svg";
 import Logo from "../../assets/logo2.svg";
 import { useExchange } from "@/app/api/config";
 
-export default function CurrencyExchange() {
+
+export default function SwapExchange() {
   const router = useRouter();
   const {
     loading: apiLoading,
     error: apiError,
     banks,
     rates,
+    currencies,
     fetchBanks,
     fetchRates,
+    fetchCurrencies,
     resolveAccount: resolveAccountApi,
   } = useExchange();
 
   const [step, setStep] = useState(1);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [currency, setCurrency] = useState("NGN");
+  const [selectedCurrency, setSelectedCurrency] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState("");
+  const [exchangeRates, setExchangeRates] = useState({});
+  const [percentageCharge, setPercentageCharge] = useState(0);
   const [formData, setFormData] = useState({
     espeeAmount: "",
     accountName: "",
@@ -36,18 +41,31 @@ export default function CurrencyExchange() {
     localAmount: "",
   });
 
-  // Fetch banks and rates on component mount
+  // Initialize page data
   useEffect(() => {
     const initializePage = async () => {
       try {
-        await Promise.all([fetchBanks(), fetchRates()]);
+        await Promise.all([fetchBanks(), fetchRates(), fetchCurrencies()]);
       } catch (err) {
         setError("Failed to initialize page data");
       }
     };
 
     initializePage();
-  }, [fetchBanks, fetchRates]);
+  }, [fetchBanks, fetchRates, fetchCurrencies]);
+
+  // Set initial exchange rates and currency
+  useEffect(() => {
+    if (rates?.exchange_rates && Object.keys(rates.exchange_rates).length > 0) {
+      setExchangeRates(rates.exchange_rates);
+      setPercentageCharge(rates.percentage_charge || 0);
+      
+      if (!selectedCurrency) {
+        const defaultCurrency = Object.keys(rates.exchange_rates)[0];
+        setSelectedCurrency(defaultCurrency);
+      }
+    }
+  }, [rates]);
 
   // Timer effect
   useEffect(() => {
@@ -65,6 +83,52 @@ export default function CurrencyExchange() {
     }
     return () => clearInterval(timer);
   }, [step, timeLeft]);
+
+  const calculateLocalAmount = (espeeAmount, currency) => {
+    if (!exchangeRates || !exchangeRates[currency] || !espeeAmount) return "";
+    
+    const rate = exchangeRates[currency];
+    const amount = parseFloat(espeeAmount) * rate;
+    const chargeAmount = amount * (percentageCharge / 100);
+    const finalAmount = amount - chargeAmount;
+    
+    return finalAmount.toFixed(2);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "espeeAmount") {
+      if (value && (!isFinite(value) || value <= 0)) {
+        setError("Please enter a valid positive amount");
+        return;
+      }
+
+      const localAmount = calculateLocalAmount(value, selectedCurrency);
+      setFormData((prev) => ({
+        ...prev,
+        espeeAmount: value,
+        localAmount,
+      }));
+      setError("");
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleCurrencyChange = (currency) => {
+    setSelectedCurrency(currency);
+    setShowDropdown(false);
+
+    const localAmount = calculateLocalAmount(formData.espeeAmount, currency);
+    setFormData((prev) => ({
+      ...prev,
+      localAmount,
+    }));
+  };
 
   const handleBack = () => {
     if (step === 1) {
@@ -101,52 +165,6 @@ export default function CurrencyExchange() {
     router.push("/dashboard");
   };
 
-  const calculateLocalAmount = (espeeAmount, selectedCurrency) => {
-    if (!rates || !rates[selectedCurrency] || !espeeAmount) return "";
-    const rate = rates[selectedCurrency];
-    return (parseFloat(espeeAmount) * rate).toFixed(2);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-
-    if (name === "espeeAmount") {
-      // Validate that input is a positive number
-      if (value && (!isFinite(value) || value <= 0)) {
-        setError("Please enter a valid positive amount");
-        return;
-      }
-
-      const localAmount = calculateLocalAmount(value, currency);
-      setFormData((prev) => ({
-        ...prev,
-        espeeAmount: value,
-        localAmount,
-      }));
-      setError(""); // Clear error if input is valid
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
-  };
-
-  const handleCurrencyChange = (selectedCurrency) => {
-    setCurrency(selectedCurrency);
-    setShowDropdown(false);
-
-    // Recalculate local amount with new currency
-    const localAmount = calculateLocalAmount(
-      formData.espeeAmount,
-      selectedCurrency
-    );
-    setFormData((prev) => ({
-      ...prev,
-      localAmount,
-    }));
-  };
-
   const handleAccountNumberBlur = async () => {
     if (formData.bankId && formData.accountNumber.length === 10) {
       try {
@@ -158,7 +176,7 @@ export default function CurrencyExchange() {
           ...prev,
           accountName: data.account_name,
         }));
-        setError(""); // Clear any previous errors
+        setError("");
       } catch (err) {
         setError("Failed to resolve account");
       }
@@ -239,7 +257,7 @@ export default function CurrencyExchange() {
 
               <div className="relative">
                 <input
-                  type="text"
+                  type="number"
                   value={formData.localAmount}
                   readOnly
                   className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -250,24 +268,39 @@ export default function CurrencyExchange() {
                     onClick={() => setShowDropdown(!showDropdown)}
                     className="h-full px-4 flex items-center bg-gray-700 text-white rounded-r"
                   >
-                    {currency} <ChevronDown className="ml-2" />
+                    {selectedCurrency} <ChevronDown className="ml-2" />
                   </button>
                 </div>
 
-                {showDropdown && rates && (
-                  <div className="absolute right-0 mt-1 w-32 bg-gray-700 text-white border rounded shadow-lg z-10 max-h-48 overflow-y-auto">
-                    {Object.keys(rates).map((curr) => (
-                      <div
-                        key={curr}
-                        onClick={() => handleCurrencyChange(curr)}
-                        className="p-2 hover:bg-gray-600 cursor-pointer transition-colors"
+                {showDropdown && currencies && currencies.length > 0 && (
+                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {currencies.map((curr) => (
+                      <button
+                        key={curr.code}
+                        onClick={() => handleCurrencyChange(curr.code)}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center justify-between"
                       >
-                        {curr}
-                      </div>
+                        <span>{curr.code}</span>
+                        <span className="text-sm text-gray-500">
+                          {curr.name}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
+
+              {selectedCurrency && exchangeRates[selectedCurrency] && (
+                <p className="text-sm text-gray-600">
+                  Current rate: 1 ESPEE = {exchangeRates[selectedCurrency]}{" "}
+                  {selectedCurrency}
+                  {percentageCharge > 0 && (
+                    <span className="ml-2">
+                      (Service charge: {percentageCharge}%)
+                    </span>
+                  )}
+                </p>
+              )}
             </div>
 
             <button
@@ -298,9 +331,9 @@ export default function CurrencyExchange() {
                   </span>
                 </p>
                 <p className="text-sm text-[#434343] mt-2 whitespace-nowrap">
-                  Amount to receive in {currency}:{" "}
+                  Amount to receive in {selectedCurrency}:{" "}
                   <span className="font-semibold">
-                    {formData.localAmount} {currency}
+                    {formData.localAmount} {selectedCurrency}
                   </span>
                 </p>
               </div>
@@ -399,7 +432,7 @@ export default function CurrencyExchange() {
           <div className="text-center max-w-md mx-auto">
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <p className="font-medium mb-2">
-                YOU WILL RECEIVE {formData.localAmount} {currency}
+                YOU WILL RECEIVE {formData.localAmount} {selectedCurrency}
               </p>
               <p className="mb-4">TRANSFER {formData.espeeAmount} ESPEES TO</p>
               <div className="flex items-center justify-center mb-4">
