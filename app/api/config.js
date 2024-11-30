@@ -8,10 +8,10 @@ const API_CONFIG = {
     process.env.NEXT_PUBLIC_API_URL || "https://cabinet.kingsswap.com.ng",
   endpoints: {
     auth: {
-      register: "/auth/register",
-      login: "/auth/login",
-      verifyEmail: "/auth/email-verification/verify",
-      requestVerification: "/auth/email-verification/request",
+      register: "/api/v1/auth/register",
+      login: "/api/v1/auth/login",
+      verifyEmail: "/api/v1/auth/email-verification/verify",
+      requestVerification: "/api/v1/auth/email-verification/request",
     },
     attributes: {
       countries: "/api/v1/attributes/countries",
@@ -37,7 +37,7 @@ class ApiService {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      withCredentials: true,
+      withCredentials: false,
     });
 
     this.token = this.getStoredToken();

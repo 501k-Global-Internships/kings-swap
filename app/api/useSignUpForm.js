@@ -136,9 +136,6 @@ export const useSignUpForm = () => {
     setErrors({});
 
     try {
-      // Perform preflight check before registration
-      await apiService.performPreflightCheck();
-
       const validationErrors = validateStep3(passwordData);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
