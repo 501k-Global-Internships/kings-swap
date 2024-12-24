@@ -1,92 +1,26 @@
+"use client";
 import React, { useState } from "react";
 
-const Step4Form = ({ email, onSuccess }) => {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+const Step4Form = ({ onVerify, onResendCode, isLoading, error }) => {
+  const [otp, setOtp] = useState(new Array(6).fill(""));
 
   const handleChange = (element, index) => {
     if (isNaN(element.value)) return false;
-
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
 
-    // Auto-focus next input
-    if (element.value && element.nextSibling) {
+    // Focus next input
+    if (element.nextSibling) {
       element.nextSibling.focus();
     }
   };
 
   const handleVerify = async () => {
-    try {
-      setIsLoading(true);
-      setError("");
-
-      const code = otp.join("");
-
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/verify",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            code,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        onSuccess?.(data.message);
-      } else {
-        setError(data.message || "Verification failed. Please try again.");
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    const code = otp.join("");
+    await onVerify(code);
   };
 
   const handleResendCode = async () => {
-    try {
-      setIsLoading(true);
-      setError("");
-
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/request",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Clear existing OTP fields
-        setOtp(["", "", "", "", "", ""]);
-        // Focus first input
-        const firstInput = document.querySelector("input");
-        if (firstInput) firstInput.focus();
-      } else {
-        setError(data.message || "Failed to resend code. Please try again.");
-      }
-    } catch (err) {
-      setError("An error occurred while resending the code.");
-    } finally {
-      setIsLoading(false);
-    }
+    await onResendCode();
   };
 
   return (

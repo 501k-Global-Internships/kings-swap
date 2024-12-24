@@ -13,7 +13,7 @@ import Step4Form from "./step4Form";
 import SuccessMessage from "./successMessage";
 import KingsChat from "../assets/kings-chat.svg";
 import bgImg from "../assets/signup.svg";
-import { useSignUpForm } from "../api/useSignUpForm";
+import { useSignUpForm } from "@/config/useSignUpForm";
 
 
 const SignUpPage = () => {
@@ -30,6 +30,7 @@ const SignUpPage = () => {
     handleStep4,
     handleResendOTP,
   } = useSignUpForm();
+  
 
   const handleStep1Complete = (countryData) => {
     handleStep1(countryData);
@@ -115,7 +116,7 @@ const SignUpPage = () => {
         <div className="flex flex-col justify-center items-center w-full h-full p-8">
           {step === 1 && (
             <>
-              <Step1Form onNext={handleStep1Complete} countries={countries} />
+              <Step1Form  onNext={handleStep1Complete} countries={countries} />
               <p className="text-sm text-[#7F7F7F] mt-4">
                 Have an account?{" "}
                 <Link href="/loginPage" className="text-[#434343] underline">
@@ -138,6 +139,7 @@ const SignUpPage = () => {
           )}
           {step === 2 && (
             <Step2Form
+           
               onNext={handleStep2Complete}
               initialData={formData}
               errors={errors}
@@ -145,6 +147,7 @@ const SignUpPage = () => {
           )}
           {step === 3 && (
             <Step3Form
+            
               onNext={handleStep3Complete}
               formData={formData}
               errors={errors}
@@ -153,6 +156,7 @@ const SignUpPage = () => {
           )}
           {step === 4 && !verificationComplete && (
             <Step4Form
+              
               onVerify={handleVerify}
               onResendCode={handleResendCode}
               isLoading={isLoading}

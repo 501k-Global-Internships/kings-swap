@@ -1,54 +1,31 @@
+"use client";
+import apiService from "@/config/config";
 import React, { useState, useEffect } from "react";
 
-const AccountVerification = ({ email, verificationCode, onLogin }) => {
+
+const SuccessMessage = ({ onLogin }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
+    const verifyEmail = async () => {
+      try {
+        const response = await apiService.auth.verifyEmail();
+        console.log("Verification successful:", response);
+        setShowSuccess(true);
+      } catch (error) {
+        console.error("Verification failed:", error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     verifyEmail();
   }, []);
 
-  const verifyEmail = async () => {
-    try {
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/email-verification/verify",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            code: verificationCode,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        setShowSuccess(true);
-        setIsVerifying(false);
-
-        // Hide the top success message after 2 seconds
-        const timer = setTimeout(() => {
-          setShowSuccess(false);
-        }, 2000);
-
-        return () => clearTimeout(timer);
-      } else {
-        setError(data.message || "Verification failed. Please try again.");
-        setIsVerifying(false);
-      }
-    } catch (err) {
-      setError("An error occurred during verification. Please try again.");
-      setIsVerifying(false);
-    }
-  };
-
-  if (isVerifying) {
+  if (isLoading) {
     return (
       <div className="w-full max-w-md mx-auto">
         <div className="bg-white rounded-lg p-6 mt-16 shadow-md text-center">
@@ -105,4 +82,4 @@ const AccountVerification = ({ email, verificationCode, onLogin }) => {
   );
 };
 
-export default AccountVerification;
+export default SuccessMessage;

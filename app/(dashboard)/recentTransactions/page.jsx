@@ -1,6 +1,7 @@
-"use client";
+'use client'
+
 import React, { useState, useEffect } from "react";
-import { useExchange } from "@/app/api/config";
+import { useExchange } from "@/config/config";
 
 const TableHeader = () => (
   <div className="flex items-center p-3 mb-4 border border-gray-500 rounded-lg text-sm text-gray-500">

@@ -9,7 +9,8 @@ import Close from "../../assets/close-circle.svg";
 import Info from "../../assets/info-circle.svg";
 import SwapBg from "../../assets/swapbg.svg";
 import Logo from "../../assets/logo2.svg";
-import { useExchange } from "@/app/api/config";
+import { useExchange } from "@/config/config";
+
 
 
 export default function SwapExchange() {

@@ -1,37 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown, Mail } from "lucide-react";
 import Link from "next/link";
+import apiService from "@/config/config";
 
-const BASE_URL = "https://cabinet.kingsswap.com.ng/api/v1";
 
 const PhoneNumberInput = ({ value, onChange, error }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [countries, setCountries] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/attributes/countries`, {
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success && data.data) {
-          setCountries(data.data);
+    const fetchCountries = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiService.attributes.getCountries();
+        if (response.success && response.data) {
+          setCountries(response.data);
           const defaultCountry =
-            data.data.find((c) => c.id === "NG") || data.data[0];
+            response.data.find((c) => c.id === "NG") || response.data[0];
           setSelectedCountry(defaultCountry);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching countries:", err);
         setFetchError("Failed to load countries");
-      })
-      .finally(() => setIsLoading(false));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCountries();
   }, []);
 
   const getCountryCode = (countryId) => {
@@ -99,7 +98,7 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
           </button>
         )}
 
-        {isOpen && !isLoading && (
+        {isOpen && !isLoading && countries.length > 0 && (
           <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
             {countries.map((country) => (
               <button
@@ -140,60 +139,74 @@ const PhoneNumberInput = ({ value, onChange, error }) => {
 
 const Step2Form = ({
   onNext,
-  formData: initialFormData = {},
+  setFormData,
+  formData = {},
   errors: serverErrors,
 }) => {
-  const [formData, setFormData] = useState({
-    first_name: initialFormData?.first_name || "",
-    last_name: initialFormData?.last_name || "",
-    kingschat_username: initialFormData?.kingschat_username || "",
-    gender: initialFormData?.gender || "",
-    email: initialFormData?.email || "",
-    phone_number: initialFormData?.phone_number || "",
-    country_id: "NG", // Default country ID
-  });
+  // const [formData, setFormData] = useState({
+  //   first_name: initialFormData?.first_name || "",
+  //   last_name: initialFormData?.last_name || "",
+  //   kingschat_username: initialFormData?.kingschat_username || "",
+  //   gender: initialFormData?.gender || "",
+  //   email: initialFormData?.email || "",
+  //   phone_number: initialFormData?.phone_number || "",
+  //   country_id: "NG", // Default country ID
+  // });
+  console.log("formData", formData);
 
   const [isGenderOpen, setIsGenderOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [localData, setLocalData] = useState({
+    first_name: formData.first_name || "",
+    last_name: formData.last_name || "",
+    kingschat_username: formData.kingschat_username || "",
+    gender: formData.gender || "",
+    email: formData.email || "",
+    phone_number: formData.phone_number || "",
+    country_id: formData.country_id || "NG",
 
-  const validateForm = () => {
-    const errors = {};
+  })
 
-    if (!formData.first_name.trim()) {
-      errors.first_name = "First name is required";
-    }
+  // const validateForm = () => {
+  //   const errors = {};
 
-    if (!formData.last_name.trim()) {
-      errors.last_name = "Last name is required";
-    }
+  //   if (!formData.first_name.trim()) {
+  //     errors.first_name = "First name is required";
+  //   }
 
-    if (!formData.kingschat_username.trim()) {
-      errors.kingschat_username = "KingsChat username is required";
-    } else if (!/^[a-zA-Z0-9._]+$/.test(formData.kingschat_username)) {
-      errors.kingschat_username =
-        "Username can only contain letters, numbers, dots, and underscores";
-    }
+  //   if (!formData.last_name.trim()) {
+  //     errors.last_name = "Last name is required";
+  //   }
 
-    if (!formData.gender) {
-      errors.gender = "Gender is required";
-    }
+  //   if (!formData.kingschat_username.trim()) {
+  //     errors.kingschat_username = "KingsChat username is required";
+  //   } else if (!/^[a-zA-Z0-9._]+$/.test(formData.kingschat_username)) {
+  //     errors.kingschat_username =
+  //       "Username can only contain letters, numbers, dots, and underscores";
+  //   }
 
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
-    }
+  //   if (!formData.gender) {
+  //     errors.gender = "Gender is required";
+  //   }
 
-    if (!formData.phone_number.trim()) {
-      errors.phone_number = "Phone number is required";
-    }
+  //   if (!formData.email.trim()) {
+  //     errors.email = "Email is required";
+  //   } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+  //     errors.email = "Please enter a valid email address";
+  //   }
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  //   if (!formData.phone_number.trim()) {
+  //     errors.phone_number = "Phone number is required";
+  //   }
+
+  //   setValidationErrors(errors);
+  //   return Object.keys(errors).length === 0;
+  // };
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
+    console.log("field", field, "value", value);
+    setLocalData((prev) => ({
+      
       ...prev,
       [field]: value,
     }));
@@ -206,24 +219,24 @@ const Step2Form = ({
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Only validate and pass the form data to parent
-    if (validateForm()) {
-      // Pass only the necessary fields to the next step
-      const formDataToSubmit = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        kingschat_username: formData.kingschat_username,
-        gender: formData.gender,
-        email: formData.email,
-        phone_number: formData.phone_number,
-        country_id: formData.country_id,
-      };
+    // if (validateForm()) {
+    //   const formDataToSubmit = {
+    //     // first_name: formData.first_name,
+    //     // last_name: formData.last_name,
+    //     // kingschat_username: formData.kingschat_username,
+    //     // gender: formData.gender,
+    //     // email: formData.email,
+    //     // phone_number: formData.phone_number,
+    //     // country_id: formData.country_id,
+    //     ...formData
+    //   };
 
-      onNext(formDataToSubmit);
-    }
+      
+    // }
+    onNext(localData);
   };
 
   const getInputClassName = (fieldName) => {
@@ -245,7 +258,7 @@ const Step2Form = ({
             </label>
             <input
               type="text"
-              value={formData.first_name}
+              value={localData.first_name}
               onChange={(e) => handleInputChange("first_name", e.target.value)}
               placeholder="Enter your real name"
               className={getInputClassName("first_name")}
@@ -264,7 +277,7 @@ const Step2Form = ({
             </label>
             <input
               type="text"
-              value={formData.last_name}
+              value={localData.last_name}
               onChange={(e) => handleInputChange("last_name", e.target.value)}
               placeholder="Enter your real name"
               className={getInputClassName("last_name")}
@@ -285,7 +298,7 @@ const Step2Form = ({
             </label>
             <input
               type="text"
-              value={formData.kingschat_username}
+              value={localData.kingschat_username}
               onChange={(e) =>
                 handleInputChange("kingschat_username", e.target.value)
               }
@@ -321,9 +334,9 @@ const Step2Form = ({
               onClick={() => setIsGenderOpen(!isGenderOpen)}
             >
               <span
-                className={formData.gender ? "text-black" : "text-gray-400"}
+                className={localData.gender ? "text-black" : "text-gray-400"}
               >
-                {formData.gender || "Select your gender"}
+                {localData.gender || "Select your gender"}
               </span>
               <ChevronDown className="text-gray-400" size={16} />
             </div>
@@ -358,7 +371,7 @@ const Step2Form = ({
           <div className="relative">
             <input
               type="email"
-              value={formData.email}
+              value={localData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               placeholder="Enter your email address"
               className={`${getInputClassName("email")} pr-8`}
@@ -381,7 +394,7 @@ const Step2Form = ({
             Phone number
           </label>
           <PhoneNumberInput
-            value={formData.phone_number}
+            value={localData.phone_number}
             onChange={(value) => handleInputChange("phone_number", value)}
             error={validationErrors.phone_number || serverErrors?.phone_number}
           />
@@ -396,12 +409,12 @@ const Step2Form = ({
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded transition-colors text-sm hover:bg-blue-600 disabled:bg-gray-300"
           disabled={
-            !formData.first_name ||
-            !formData.last_name ||
-            !formData.kingschat_username ||
-            !formData.gender ||
-            !formData.email ||
-            !formData.phone_number
+            !localData.first_name ||
+            !localData.last_name ||
+            !localData.kingschat_username ||
+            !localData.gender ||
+            !localData.email ||
+            !localData.phone_number
           }
         >
           Continue
