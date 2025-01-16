@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import bgImg from "@assets/forget-bgImg.svg";
 import Link from "next/link";
 import Image from "next/image";
-// import Img2 from "../assets/vector-img.svg";
+import Img2 from "../assets/vector-img.svg";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
