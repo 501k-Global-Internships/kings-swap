@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import apiService from "@/config/config";
-import Img from "@/app/assets/swapIcon.svg";
+import apiService from "@config/config";
+import Img from "@assets/swapIcon.svg";
 
 const SwapCard = () => {
   const [apiLoading, setApiLoading] = useState(false);

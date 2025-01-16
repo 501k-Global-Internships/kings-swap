@@ -1,7 +1,8 @@
 'use client'
 
+import apiService from "@config/config";
 import React, { useState, useEffect } from "react";
-import apiService from "@/config/config";
+
 
 const TransactionTable = () => {
   const [transactions, setTransactions] = useState([]);

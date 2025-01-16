@@ -3,13 +3,14 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Copy from "../../assets/copy.svg";
-import Coin from "../../assets/coin2.svg";
-import Close from "../../assets/close-circle.svg";
-import Info from "../../assets/info-circle.svg";
-import SwapBg from "../../assets/swapbg.svg";
-import Logo from "../../assets/logo2.svg";
-import { useExchange } from "@/config/config";
+import Copy from "@assets/copy.svg";
+import Coin from "@assets/coin2.svg";
+import Close from "@assets/close-circle.svg";
+import Info from "@assets/info-circle.svg";
+import SwapBg from "@assets/swapbg.svg";
+import Logo from "@assets/logo2.svg";
+import { useExchange } from "@config/config";
+
 
 
 
