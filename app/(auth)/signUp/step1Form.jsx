@@ -1,35 +1,15 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import apiService from "@/config/config";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
 
 
-const Step1Form = ({ onNext }) => {
-  const [countries, setCountries] = useState([]);
+const Step1Form = ({ onNext, countries, isLoading }) => {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchCountries();
-  }, []);
 
-  const fetchCountries = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await apiService.attributes.getCountries();
-      if (response.data) setCountries(response.data);
-    } catch (error) {
-      console.error("Failed to fetch countries:", error);
-      setError("Failed to load countries");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleContinue = () => {
     if (!selectedCountry) {
@@ -77,9 +57,9 @@ const Step1Form = ({ onNext }) => {
 
         {isOpen && !isLoading && (
           <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b mt-[-1px] max-h-48 overflow-y-auto">
-            {countries.map((country) => (
+            {countries?.map((country) => (
               <div
-                key={country.id}
+                key={country?.id}
                 className="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
                 onClick={() => {
                   setSelectedCountry(country);
@@ -87,11 +67,11 @@ const Step1Form = ({ onNext }) => {
                 }}
               >
                 <img
-                  src={country.flag_url}
-                  alt={`${country.name} flag`}
+                  src={country?.flag_url}
+                  alt={`${country?.name} flag`}
                   className="w-6 h-4 object-cover"
                 />
-                {country.name}
+                {country?.name}
               </div>
             ))}
           </div>

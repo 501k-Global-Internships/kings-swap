@@ -1,29 +1,10 @@
 "use client";
-import apiService from "@/config/config";
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 
 
-const SuccessMessage = ({ onLogin }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+const SuccessMessage = ({ onLogin, showSuccess, isLoading, error, retryVerification }) => {
 
-  useEffect(() => {
-    const verifyEmail = async () => {
-      try {
-        const response = await apiService.auth.verifyEmail();
-        console.log("Verification successful:", response);
-        setShowSuccess(true);
-      } catch (error) {
-        console.error("Verification failed:", error);
-        setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifyEmail();
-  }, []);
 
   if (isLoading) {
     return (

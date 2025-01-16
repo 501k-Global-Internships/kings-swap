@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Img from "../assets/kings-call.svg";
-import Img2 from "../assets/kings-chats.svg";
+import Img from "@/assets/kings-call.svg";
+import Img2 from "@/assets/kings-chats.svg";
 
 const ChevronDownIcon = () => (
   <svg

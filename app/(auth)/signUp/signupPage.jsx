@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
 import { Loader2 } from "lucide-react";
 import ImageSlider from "./imageSlider/imageSlider";
 import Step1Form from "./step1Form";
@@ -11,16 +11,20 @@ import Step2Form from "./step2Form";
 import Step3Form from "./step3Form";
 import Step4Form from "./step4Form";
 import SuccessMessage from "./successMessage";
-import KingsChat from "../assets/kings-chat.svg";
-import bgImg from "../assets/signup.svg";
-import { useSignUpForm } from "@/config/useSignUpForm";
-
+import KingsChat from "@/assets/kings-chat.svg";
+import bgImg from "@/assets/signup.svg";
+import { useSignUpForm } from "@hooks/useSignUpForm";
+import { useRouter } from "next/navigation";
 
 const SignUpPage = () => {
+  const { push } = useRouter();
   const {
     formData,
     errors,
-    isLoading,
+    postPending,
+    resending,
+    isFetching,
+    verifying,
     countries,
     step,
     verificationComplete,
@@ -30,7 +34,6 @@ const SignUpPage = () => {
     handleStep4,
     handleResendOTP,
   } = useSignUpForm();
-  
 
   const handleStep1Complete = (countryData) => {
     handleStep1(countryData);
@@ -60,7 +63,7 @@ const SignUpPage = () => {
         style={{ backgroundImage: `url(${bgImg.src})` }}
       >
         {/* Step Indicator */}
-        <div className="absolute top-0 w-full flex justify-center items-center p-4">
+        <div className="w-full flex justify-center items-center p-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-bold shadow py-[.5rem] px-[1rem] bg-[#FFFFFF] text-gray-700">
               Step {step}
@@ -89,8 +92,8 @@ const SignUpPage = () => {
         </div>
 
         {/* Error Display */}
-        {Object.keys(errors).length > 0 && (
-          <div className="absolute top-20 w-full max-w-md px-4">
+        {errors && Object.keys(errors).length > 0 && (
+          <div className="w-full max-w-md px-4">
             <Alert variant="destructive">
               <AlertDescription>
                 <ul className="list-disc pl-4">
@@ -106,7 +109,7 @@ const SignUpPage = () => {
         )}
 
         {/* Loading Overlay */}
-        {isLoading && (
+        {resending && (
           <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-50">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
           </div>
@@ -116,7 +119,11 @@ const SignUpPage = () => {
         <div className="flex flex-col justify-center items-center w-full h-full p-8">
           {step === 1 && (
             <>
-              <Step1Form  onNext={handleStep1Complete} countries={countries} />
+              <Step1Form
+                onNext={handleStep1Complete}
+                countries={countries}
+                isLoading={isFetching}
+              />
               <p className="text-sm text-[#7F7F7F] mt-4">
                 Have an account?{" "}
                 <Link href="/loginPage" className="text-[#434343] underline">
@@ -137,9 +144,10 @@ const SignUpPage = () => {
               </div>
             </>
           )}
+
+          {/* TODO: to be refactored */}
           {step === 2 && (
             <Step2Form
-           
               onNext={handleStep2Complete}
               initialData={formData}
               errors={errors}
@@ -147,23 +155,29 @@ const SignUpPage = () => {
           )}
           {step === 3 && (
             <Step3Form
-            
               onNext={handleStep3Complete}
               formData={formData}
               errors={errors}
-              isLoading={isLoading}
+              isLoading={postPending}
             />
           )}
           {step === 4 && !verificationComplete && (
             <Step4Form
-              
               onVerify={handleVerify}
               onResendCode={handleResendCode}
-              isLoading={isLoading}
+              isLoading={resending || verifying}
               error={errors.general?.[0]}
             />
           )}
-          {step === 4 && verificationComplete && <SuccessMessage />}
+          {step === 4 && verificationComplete && (
+            <SuccessMessage
+              gotoLogin={() => push('/loginPage')}
+              showSuccess={verificationComplete}
+              isLoading={verifying}
+              error={errors?.general}
+              retryVerification={handleVerify}
+            />
+          )}
         </div>
       </div>
     </div>

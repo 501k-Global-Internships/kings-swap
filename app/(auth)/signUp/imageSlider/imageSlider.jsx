@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Img1 from "../../assets/pic_picked.svg";
-import Img2 from "../../assets/coin2.svg";
-import Img3 from "../../assets/signup-img2.svg";
-import Logo from "../../assets/vector-img.svg";
+import Img1 from "@/assets/pic_picked.svg";
+import Img2 from "@/assets/coin2.svg";
+import Img3 from "@/assets/signup-img2.svg";
+import Logo from "@/assets/vector-img.svg";
 import './imageSlider.css'
 
 const images = [Img1, Img2, Img3];
@@ -28,7 +28,7 @@ const ImageSlider = () => {
     if (imageRef.current) {
       imageRef.current.classList.add("bounce");
       setTimeout(() => {
-        imageRef.current.classList.remove("bounce");
+        imageRef.current?.classList.remove("bounce");
       }, 1000); // Remove the animation class after 1 second (animation duration)
     }
 

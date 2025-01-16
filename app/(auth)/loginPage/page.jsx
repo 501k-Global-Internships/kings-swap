@@ -1,69 +1,43 @@
 "use client";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation"; // Changed from next/router
-import Img from "../assets/coin2.svg";
-import Img2 from "../assets/vector-img.svg";
-import Img3 from "../assets/kings-chat.svg";
-import bgImg from "../assets/sea-bg.svg";
+import { useRouter } from "next/navigation";
+import Img from "@/assets/coin2.svg";
+import Img2 from "@/assets/vector-img.svg";
+import Img3 from "@/assets/kings-chat.svg";
+import bgImg from "@/assets/sea-bg.svg";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import apiService from "@config/config";
 
 const LoginPage = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { handleSubmit, register, formState: { errors }} = useForm();
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const { mutate: loginFunc, isPending: Signing } = useMutation({
+    mutationFn: (data) => apiService.auth.login(data),
+    onSuccess: (data) => {
+       // Store the token in localStorage or your preferred storage method
+       localStorage.setItem("token", data.api_token);
+       localStorage.setItem("user", JSON.stringify(data.data));
 
-    try {
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+       // Redirect to dashboard or home page
+       router.push("/dashboard");
+    },
+    onError: (error) => {
+      setError({ general: [error.message] });
+    },
+  });
 
-      const data = await response.json();
 
-      if (data.success) {
-        // Store the token in localStorage or your preferred storage method
-        localStorage.setItem("token", data.api_token);
-        localStorage.setItem("user", JSON.stringify(data.data));
-
-        // Redirect to dashboard or home page
-        router.push("/dashboard");
-      } else {
-        setError("Invalid credentials");
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
-      console.error("Login error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const onSubmit = useCallback(async (data) => {
+    loginFunc(data);
+  }, []);
 
   return (
     <div className="flex min-h-screen">
@@ -98,12 +72,12 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-md p-8 mb-4">
             <h2 className="text-2xl font-bold mb-6">Login your account</h2>
-            {error && (
+            {(errors.length > 0 || error) && (
               <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-                {error}
+                {errors.email?.message || errors.password?.message || error.general}
               </div>
             )}
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-4">
                 <label htmlFor="email" className="block mb-2 text-sm">
                   Email address
@@ -112,11 +86,13 @@ const LoginPage = () => {
                   <input
                     type="email"
                     id="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
+                    name="email"
+                    {...register("email")}
+                    // value={formData.email}
+                    // onChange={handleInputChange}
                     className="w-full px-3 py-2 border rounded"
                     placeholder="Enter your email address"
-                    required
+                    // required
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <svg
@@ -152,11 +128,13 @@ const LoginPage = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     id="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
+                    name="password"
+                    {...register("password")}
+                    // value={formData.password}
+                    // onChange={handleInputChange}
                     className="w-full px-3 py-2 border rounded"
                     placeholder="Enter your password"
-                    required
+                    // required
                   />
                   <button
                     type="button"
@@ -175,12 +153,12 @@ const LoginPage = () => {
               </Link>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={Signing}
                 className={`w-full bg-blue-500 text-white py-2 rounded font-semibold ${
-                  loading ? "opacity-70 cursor-not-allowed" : ""
+                  Signing ? "opacity-70 cursor-not-allowed" : ""
                 }`}
               >
-                {loading ? "Logging in..." : "Login"}
+                {Signing ? "Logging in..." : "Login"}
               </button>
             </form>
           </div>
