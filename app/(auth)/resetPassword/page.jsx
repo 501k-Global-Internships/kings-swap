@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from "react";
-import bgImg from "../assets/forget-bgImg.svg";
+import bgImg from "@assets/forget-bgImg.svg";
 import Link from "next/link";
 import Image from "next/image";
 import Img2 from "../assets/vector-img.svg";

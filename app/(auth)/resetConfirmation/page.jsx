@@ -9,9 +9,9 @@ const ResetConfirmationWrapper = () => (
 );
 
 import React, { useState, useEffect } from "react";
-import bgImage from "../assets/password-bg.svg";
+import bgImage from "@assets/password-bg.svg";
 import Link from "next/link";
-import Img2 from "../assets/vector-img.svg";
+import Img2 from "@assets/vector-img.svg";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 

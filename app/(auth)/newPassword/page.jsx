@@ -1,5 +1,4 @@
 "use client";
-// app/newPassword/page.js
 import { Suspense } from "react";
 
 // Create a wrapper component for the main content
@@ -15,11 +14,9 @@ const NewPasswordWrapper = () => (
   </Suspense>
 );
 
-// Move your existing component here and rename it
-
 import React, { useState } from "react";
-import bgImage from "../assets/password-bg.svg";
-import Img2 from "../assets/vector-img.svg";
+import bgImage from "@assets/password-bg.svg";
+import Img2 from "@assets/vector-img.svg";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 
