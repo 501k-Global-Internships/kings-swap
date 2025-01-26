@@ -1,10 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useState, useCallback, useEffect, useMemo } from "react";
 import { z } from "zod"; 
-
-
 
 const RATE_LIMIT_CONFIG = {
   maxRetries: 3,
@@ -64,7 +61,7 @@ const API_CONFIG = {
     },
     transactions: {
       create: "/api/v1/transactions",
-      list: "/api/v1/transactions/list",
+      list: "/api/v1/transactions",
       details: "/api/v1/transactions/:id",
     },
     preflight: "/ping",
@@ -153,8 +150,8 @@ class ApiService {
       this.setupInterceptors();
       this.retryQueue = new Map();
     } catch (error) {
-      console.error('Invalid API configuration:', error);
-      throw new Error('Invalid API configuration');
+      console.error("Invalid API configuration:", error);
+      throw new Error("Invalid API configuration");
     }
   }
 
@@ -177,7 +174,7 @@ class ApiService {
       const encryptedToken = localStorage.getItem("token");
       return encryptedToken ? this.decryptToken(encryptedToken) : null;
     } catch (error) {
-      console.error('Token retrieval failed:', error);
+      console.error("Token retrieval failed:", error);
       return null;
     }
   }
@@ -195,7 +192,7 @@ class ApiService {
         this.token = null;
       }
     } catch (error) {
-      console.error('Token storage failed:', error);
+      console.error("Token storage failed:", error);
       this.handleAuthError();
     }
   }
@@ -226,19 +223,19 @@ class ApiService {
 
   async handleResponseError(error) {
     const originalRequest = error.config;
-    
+
     if (!originalRequest) {
       return Promise.reject(this.formatError(error));
     }
 
     // Enhanced error logging
-    console.log('API Error:', {
+    console.log("API Error:", {
       url: originalRequest.url,
       method: originalRequest.method,
       status: error.response?.status,
       errorCode: error.response?.data?.code,
       message: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Handle token expiration
@@ -251,7 +248,8 @@ class ApiService {
     // Handle retryable errors
     if (
       formattedError.retryable &&
-      (!originalRequest._retryCount || originalRequest._retryCount < RATE_LIMIT_CONFIG.maxRetries)
+      (!originalRequest._retryCount ||
+        originalRequest._retryCount < RATE_LIMIT_CONFIG.maxRetries)
     ) {
       return this.handleRetry(originalRequest, formattedError);
     }
@@ -262,19 +260,20 @@ class ApiService {
   // Add new method for error monitoring/reporting
   logError(error) {
     // In production, you might want to send this to your error monitoring service
-    console.log('API Error:', {
+    console.log("API Error:", {
       errorCode: error.errorCode,
       status: error.status,
       message: error.message,
       timestamp: error.timestamp,
       retryable: error.retryable,
-      originalError: error.originalError ? {
-        message: error.originalError.message,
-        stack: error.originalError.stack
-      } : null
+      originalError: error.originalError
+        ? {
+            message: error.originalError.message,
+            stack: error.originalError.stack,
+          }
+        : null,
     });
   }
-
 
   async handleRequest(config) {
     const token = this.token || this.getStoredToken();
@@ -293,7 +292,6 @@ class ApiService {
     return response;
   }
 
-
   async handleTokenExpiration(originalRequest) {
     originalRequest._retry = true;
     try {
@@ -310,17 +308,18 @@ class ApiService {
   async handleRetry(originalRequest, error) {
     originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
     const delay = Math.min(
-      RATE_LIMIT_CONFIG.baseDelay * Math.pow(2, originalRequest._retryCount - 1),
+      RATE_LIMIT_CONFIG.baseDelay *
+        Math.pow(2, originalRequest._retryCount - 1),
       RATE_LIMIT_CONFIG.maxDelay
     );
 
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
     return this.axios(originalRequest);
   }
 
   formatError(error) {
     const errorDetails = ApiError.getErrorDetails(error);
-    
+
     return new ApiError(
       errorDetails.message,
       errorDetails.status,
@@ -335,30 +334,9 @@ class ApiService {
     this.setToken(null);
     if (typeof window !== "undefined") {
       // Use a more robust navigation solution in production
-      window.location.href = "/login";
+      window.location.href = "/loginPage";
     }
   }
-
-  // // Error Handling
-  // formatError(error) {
-  //   if (error.response) {
-  //     return new ApiError(
-  //       error.response.data.message || "An error occurred",
-  //       error.response.status,
-  //       error.response.data
-  //     );
-  //   } else if (error.request) {
-  //     return new ApiError("No response received from server", 0);
-  //   }
-  //   return new ApiError(error.message, 500);
-  // }
-
-  // handleAuthError() {
-  //   this.setToken(null);
-  //   if (typeof window !== "undefined") {
-  //     window.location.href = "/login";
-  //   }
-  // }
 
   async makeRequest(requestConfig) {
     try {
@@ -374,12 +352,11 @@ class ApiService {
   // Example of updated method using makeRequest
   async checkHealth() {
     return this.makeRequest({
-      method: 'HEAD',
+      method: "HEAD",
       url: this.config.endpoints.preflight,
-      timeout: 5000
+      timeout: 5000,
     });
   }
-
 
   // Authentication Methods
   auth = {
@@ -472,16 +449,21 @@ class ApiService {
       }
     },
 
-    getBanks: async () => {
-      try {
-        const response = await this.axios.get(
-          this.config.endpoints.attributes.banks
-        );
-        return response.data?.banks || [];
-      } catch (error) {
-        throw this.formatError(error);
+    getBanks: async (currency) => {
+  try {
+    const response = await this.axios.get(
+      this.config.endpoints.attributes.banks, 
+      {
+        params: {
+          currency: currency
+        }
       }
-    },
+    );
+    return response.data?.banks || [];
+  } catch (error) {
+    throw new Error(error);
+  }
+},
 
     getRates: async () => {
       try {
@@ -490,7 +472,7 @@ class ApiService {
         );
         return response.data;
       } catch (error) {
-        throw this.formatError(error);
+        throw new Error(error);
       }
     },
 
@@ -501,7 +483,7 @@ class ApiService {
         );
         return response.data;
       } catch (error) {
-        throw this.formatError(error);
+        throw new Error(error);
       }
     },
 
@@ -524,7 +506,14 @@ class ApiService {
       try {
         const response = await this.axios.post(
           this.config.endpoints.transactions.create,
-          data
+          {
+            espee_amount: data.espee_amount,
+            destination_currency: data.destination_currency,
+            bank_account: {
+              bank_id: data.bank_account.bank_id,
+              account_number: data.bank_account.account_number,
+            },
+          }
         );
         return response.data;
       } catch (error) {
@@ -532,14 +521,19 @@ class ApiService {
       }
     },
 
-    list: async () => {
+    list: async (currency) => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.transactions.list
+        const response = await this.axios.post(
+          this.config.endpoints.transactions.list,
+          {
+            params: {
+              currency: currency,
+            },
+          }
         );
         return response.data;
       } catch (error) {
-        throw this.formatError(error);
+        throw new Error(error);
       }
     },
 
@@ -558,196 +552,6 @@ class ApiService {
 // Create API service instance
 const apiService = new ApiService(API_CONFIG);
 
-// Custom Hook for Exchange Operations
-export const useExchange = () => {
-  const [state, setState] = useState({
-    loading: false,
-    error: null,
-    banks: [],
-    rates: null,
-    transactions: [],
-    countries: [],
-    currencies: [],
-  });
-
-  const setPartialState = useCallback((updates) => {
-    setState((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  const handleApiError = useCallback((error) => {
-    let userMessage = 'An unexpected error occurred';
-    
-    switch (error.errorCode) {
-      case 'NO_INTERNET':
-        userMessage = 'Please check your internet connection';
-        break;
-      case 'REQUEST_TIMEOUT':
-        userMessage = 'The request timed out. Please try again';
-        break;
-      case 'SERVER_429':
-        userMessage = 'Too many requests. Please wait a moment';
-        break;
-      case 'SERVER_503':
-        userMessage = 'Service temporarily unavailable';
-        break;
-      default:
-        if (error.status >= 500) {
-          userMessage = 'Server error. Please try again later';
-        } else if (error.status >= 400) {
-          userMessage = error.message || 'Request failed';
-        }
-    }
-
-    setPartialState({
-      error: {
-        message: userMessage,
-        technical: error.message,
-        code: error.errorCode
-      }
-    });
-  }, [setPartialState]);
-
-
-  const fetchWithErrorHandling = async (fetchFunction, errorCallback) => {
-    try {
-      setPartialState({ loading: true, error: null });
-      const result = await fetchFunction();
-      return result;
-    } catch (err) {
-      handleApiError(err);
-      if (errorCallback) errorCallback();
-      throw err;
-    } finally {
-      setPartialState({ loading: false });
-    }
-  };
-
-  const fetchFunctions = useMemo(
-    () => ({
-      fetchBanks: async () => {
-        const data = await apiService.attributes.getBanks();
-        setPartialState({ banks: data });
-        return data;
-      },
-      fetchRates: async () => {
-        const data = await apiService.attributes.getRates();
-        setPartialState({ rates: data });
-        return data;
-      },
-      fetchTransactions: async () => {
-        const data = await apiService.transactions.list();
-        setPartialState({ transactions: data });
-        return data;
-      },
-      fetchCountries: async () => {
-        const data = await apiService.attributes.getCountries();
-        setPartialState({ countries: data });
-        return data;
-      },
-      fetchCurrencies: async () => {
-        const data = await apiService.attributes.getCurrencies();
-        setPartialState({ currencies: data });
-        return data;
-      },
-    }),
-    [setPartialState]
-  );
-
-  const fetchBanks = useCallback(() => {
-    return fetchWithErrorHandling(fetchFunctions.fetchBanks);
-  }, [fetchFunctions]);
-
-  const fetchRates = useCallback(() => {
-    return fetchWithErrorHandling(fetchFunctions.fetchRates);
-  }, [fetchFunctions]);
-
-  const fetchTransactions = useCallback(() => {
-    return fetchWithErrorHandling(fetchFunctions.fetchTransactions);
-  }, [fetchFunctions]);
-
-  const fetchCountries = useCallback(() => {
-    return fetchWithErrorHandling(fetchFunctions.fetchCountries);
-  }, [fetchFunctions]);
-
-  const fetchCurrencies = useCallback(() => {
-    return fetchWithErrorHandling(fetchFunctions.fetchCurrencies);
-  }, [fetchFunctions]);
-
-  const resolveAccount = useCallback((bankId, accountNumber) => {
-    return fetchWithErrorHandling(() => 
-      apiService.attributes.resolveAccount(bankId, accountNumber)
-    );
-  }, []);
-
-  const createTransaction = useCallback((transactionData) => {
-    return fetchWithErrorHandling(() => 
-      apiService.transactions.create(transactionData)
-    );
-  }, []);
-
-  // Initialize data on mount
-  useEffect(() => {
-    let mounted = true;
-
-    const initializeData = async () => {
-      try {
-        setPartialState({ error: null });
-        const promises = [
-          fetchFunctions.fetchRates(),
-          fetchFunctions.fetchBanks(),
-          fetchFunctions.fetchCountries(),
-          fetchFunctions.fetchCurrencies(),
-        ];
-
-        if (apiService.getStoredToken()) {
-          promises.push(fetchFunctions.fetchTransactions());
-        }
-
-        const results = await Promise.allSettled(promises);
-
-        if (mounted) {
-          results.forEach((result, index) => {
-            if (result.status === "rejected") {
-              console.error(
-                `Failed to fetch data for index ${index}:`,
-                result.reason
-              );
-            }
-          });
-        }
-      } catch (err) {
-        if (mounted) {
-          console.error("Initialization failed:", err);
-          setPartialState({ error: err.message });
-        }
-      }
-    };
-
-    initializeData();
-
-    return () => {
-      mounted = false;
-    };
-  }, [fetchFunctions]);
-
-  return {
-    // loading,
-    // error: error ? String(error) : null,
-    // banks,
-    // rates,
-    // transactions,
-    // countries,
-    // currencies,
-    ...state,
-    fetchBanks,
-    fetchRates,
-    fetchTransactions,
-    fetchCountries,
-    fetchCurrencies,
-    resolveAccount,
-    createTransaction,
-  };
-};
 
 export default apiService;
 export { API_CONFIG, ApiError };

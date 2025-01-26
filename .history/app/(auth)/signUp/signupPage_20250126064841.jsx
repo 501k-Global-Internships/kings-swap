@@ -118,33 +118,11 @@ const SignUpPage = () => {
         {/* Form Steps */}
         <div className="flex flex-col justify-center items-center w-full h-full p-8">
           {step === 1 && (
-            <>
-              <Step1Form
-                onNext={handleStep1Complete}
-                countries={countries}
-                isLoading={isFetching}
-              />
-              <div className="mt-6 text-center w-full max-w-md">
-                <p className="text-sm text-[#7F7F7F] mb-2">
-                  <Link href="/loginPage" className="text-[#434343] underline">
-                    Have an account? Sign in
-                  </Link>
-                </p>
-                <p className="text-sm text-[#434343] mb-2">Or signup with</p>
-                <Link
-                  href="/kingsChat"
-                  className="w-full py-2 flex items-center justify-center transition-colors"
-                >
-                  <Image
-                    src={KingsChat}
-                    alt="KingsChat"
-                    width={300}
-                    height={124}
-                    className="mr-2"
-                  />
-                </Link>
-              </div>
-            </>
+            <Step1Form
+              onNext={handleStep1Complete}
+              countries={countries}
+              isLoading={isFetching}
+            />
           )}
           {step === 2 && (
             <Step2Form
@@ -178,6 +156,25 @@ const SignUpPage = () => {
               retryVerification={handleVerify}
             />
           )}
+        </div>
+
+        {/* Sign In and KingsChat Buttons */}
+        <div className="mt-6 text-center w-full max-w-md">
+          <p className="text-sm text-[#434343] mb-2">
+            Have an account?{" "}
+            <Link href="/loginPage" className="text-[#434343] underline">
+              Sign in
+            </Link>
+          </p>
+          <button className="w-full py-2 flex items-center justify-center transition-colors">
+            <Image
+              src={KingsChat}
+              alt="KingsChat"
+              width={300}
+              height={124}
+              className="mr-2"
+            />
+          </button>
         </div>
       </div>
     </div>

@@ -62,8 +62,8 @@ const SignUpPage = () => {
         className="w-full md:w-1/2 bg-cover bg-center bg-gray-200 flex flex-col justify-start items-center relative"
         style={{ backgroundImage: `url(${bgImg.src})` }}
       >
-        {/* Step Indicator (hidden on mobile) */}
-        <div className="hidden md:flex justify-center items-center w-full p-4">
+        {/* Step Indicator */}
+        <div className="w-full flex justify-center items-center p-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-bold shadow py-[.5rem] px-[1rem] bg-[#FFFFFF] text-gray-700">
               Step {step}
@@ -72,7 +72,7 @@ const SignUpPage = () => {
               {[1, 2, 3, 4].map((num) => (
                 <React.Fragment key={num}>
                   <div
-                    className={`w-[.95rem] h-[.95rem] rounded-full flex items-center justify-center text-white font-bold ${
+                    className={`w-[.8rem] md:w-[.95rem] h-[.8rem] md:h-[.95rem] rounded-full flex items-center justify-center text-white font-bold ${
                       step >= num ? "bg-blue-500" : "bg-[#D9D9D9]"
                     }`}
                   >
@@ -80,7 +80,7 @@ const SignUpPage = () => {
                   </div>
                   {num < 4 && (
                     <div
-                      className={`h-[.125rem] w-[6rem] mx-2 ${
+                      className={`h-[.125rem] w-[4rem] md:w-[6rem] mx-2 ${
                         step > num ? "bg-blue-500" : "bg-gray-300"
                       }`}
                     />
@@ -124,17 +124,15 @@ const SignUpPage = () => {
                 countries={countries}
                 isLoading={isFetching}
               />
+              <p className="text-sm text-[#7F7F7F] mt-4">
+                Have an account?{" "}
+                <Link href="/loginPage" className="text-[#434343] underline">
+                  Sign in
+                </Link>
+              </p>
               <div className="mt-6 text-center w-full max-w-md">
-                <p className="text-sm text-[#7F7F7F] mb-2">
-                  <Link href="/loginPage" className="text-[#434343] underline">
-                    Have an account? Sign in
-                  </Link>
-                </p>
                 <p className="text-sm text-[#434343] mb-2">Or signup with</p>
-                <Link
-                  href="/kingsChat"
-                  className="w-full py-2 flex items-center justify-center transition-colors"
-                >
+                <button className="w-full py-2 flex items-center justify-center transition-colors">
                   <Image
                     src={KingsChat}
                     alt="KingsChat"
@@ -142,10 +140,12 @@ const SignUpPage = () => {
                     height={124}
                     className="mr-2"
                   />
-                </Link>
+                </button>
               </div>
             </>
           )}
+
+          {/* TODO: to be refactored */}
           {step === 2 && (
             <Step2Form
               onNext={handleStep2Complete}
@@ -171,7 +171,7 @@ const SignUpPage = () => {
           )}
           {step === 4 && verificationComplete && (
             <SuccessMessage
-              gotoLogin={() => push("/loginPage")}
+              gotoLogin={() => push('/loginPage')}
               showSuccess={verificationComplete}
               isLoading={verifying}
               error={errors?.general}

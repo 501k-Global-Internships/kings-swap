@@ -1,10 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-
+import { useRouter } from "next/navigation";
 
 const SuccessMessage = ({ onLogin, showSuccess, isLoading, error, retryVerification }) => {
 
+  const router = useRouter();
+
+
+  const handleLogin = () => {
+    router.push("/loginPage");
+  };
 
   if (isLoading) {
     return (
@@ -53,7 +59,7 @@ const SuccessMessage = ({ onLogin, showSuccess, isLoading, error, retryVerificat
           Account verified successfully!
         </div>
         <button
-          onClick={onLogin}
+          onClick={handleLogin}
           className="w-full bg-white border border-[#37BE1C] p-2 rounded-md hover:bg-green-50 transition-colors"
         >
           Go to Login

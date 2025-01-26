@@ -131,10 +131,7 @@ const SignUpPage = () => {
                   </Link>
                 </p>
                 <p className="text-sm text-[#434343] mb-2">Or signup with</p>
-                <Link
-                  href="/kingsChat"
-                  className="w-full py-2 flex items-center justify-center transition-colors"
-                >
+                <Link className="w-full py-2 flex items-center justify-center transition-colors">
                   <Image
                     src={KingsChat}
                     alt="KingsChat"
@@ -142,7 +139,7 @@ const SignUpPage = () => {
                     height={124}
                     className="mr-2"
                   />
-                </Link>
+                </button>
               </div>
             </>
           )}

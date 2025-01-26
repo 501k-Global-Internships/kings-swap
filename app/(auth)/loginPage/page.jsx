@@ -1,4 +1,5 @@
-"use client";
+'use client';
+
 import React, { useCallback, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -14,36 +15,38 @@ import apiService from "@config/config";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { handleSubmit, register, formState: { errors }} = useForm();
+  const {
+    handleSubmit,
+    register,
+    formState: { errors },
+  } = useForm();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-
 
   const { mutate: loginFunc, isPending: Signing } = useMutation({
     mutationFn: (data) => apiService.auth.login(data),
     onSuccess: (data) => {
-       // Store the token in localStorage or your preferred storage method
-       localStorage.setItem("token", data.api_token);
-       localStorage.setItem("user", JSON.stringify(data.data));
+      // Store the token in localStorage or your preferred storage method
+      localStorage.setItem("token", data.api_token);
+      localStorage.setItem("user", JSON.stringify(data.data));
 
-       // Redirect to dashboard or home page
-       router.push("/dashboard");
+      // Redirect to dashboard or home page
+      router.push("/dashboard");
     },
     onError: (error) => {
       setError({ general: [error.message] });
     },
   });
 
-
   const onSubmit = useCallback(async (data) => {
     loginFunc(data);
   }, []);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-screen">
       {/* Left section */}
       <div
-        className="w-1/2 bg-cover bg-center relative"
+        className="w-full md:w-1/2 bg-cover bg-center relative"
         style={{ backgroundImage: `url(${bgImg.src})` }}
       >
         <div className="flex flex-col items-center justify-center h-full text-white relative z-10 p-8">
@@ -68,13 +71,15 @@ const LoginPage = () => {
       </div>
 
       {/* Right section */}
-      <div className="w-1/2 bg-gray-100 flex items-center justify-center p-8">
+      <div className="w-full md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-md p-8 mb-4">
             <h2 className="text-2xl font-bold mb-6">Login your account</h2>
             {(errors.length > 0 || error) && (
               <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-                {errors.email?.message || errors.password?.message || error.general}
+                {errors.email?.message ||
+                  errors.password?.message ||
+                  error.general}
               </div>
             )}
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -88,11 +93,8 @@ const LoginPage = () => {
                     id="email"
                     name="email"
                     {...register("email")}
-                    // value={formData.email}
-                    // onChange={handleInputChange}
                     className="w-full px-3 py-2 border rounded"
                     placeholder="Enter your email address"
-                    // required
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <svg
@@ -130,11 +132,8 @@ const LoginPage = () => {
                     id="password"
                     name="password"
                     {...register("password")}
-                    // value={formData.password}
-                    // onChange={handleInputChange}
                     className="w-full px-3 py-2 border rounded"
                     placeholder="Enter your password"
-                    // required
                   />
                   <button
                     type="button"

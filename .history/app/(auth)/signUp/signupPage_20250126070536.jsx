@@ -125,16 +125,8 @@ const SignUpPage = () => {
                 isLoading={isFetching}
               />
               <div className="mt-6 text-center w-full max-w-md">
-                <p className="text-sm text-[#7F7F7F] mb-2">
-                  <Link href="/loginPage" className="text-[#434343] underline">
-                    Have an account? Sign in
-                  </Link>
-                </p>
                 <p className="text-sm text-[#434343] mb-2">Or signup with</p>
-                <Link
-                  href="/kingsChat"
-                  className="w-full py-2 flex items-center justify-center transition-colors"
-                >
+                <button className="w-full py-2 flex items-center justify-center transition-colors">
                   <Image
                     src={KingsChat}
                     alt="KingsChat"
@@ -142,7 +134,13 @@ const SignUpPage = () => {
                     height={124}
                     className="mr-2"
                   />
-                </Link>
+                </button>
+                <p className="text-sm text-[#7F7F7F] mt-4">
+                  Have an account?{" "}
+                  <Link href="/loginPage" className="text-[#434343] underline">
+                    Sign in
+                  </Link>
+                </p>
               </div>
             </>
           )}

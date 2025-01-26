@@ -4,50 +4,96 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import apiService from "@config/config";
 import Img from "@assets/swapIcon.svg";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+
 
 const SwapCard = () => {
-  const [apiLoading, setApiLoading] = useState(false);
+  const router = useRouter();
+  // const [apiLoading, setApiLoading] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [isValidAmount, setIsValidAmount] = useState(false);
   const [espeeAmount, setEspeeAmount] = useState("");
   const [localAmount, setLocalAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState("NGN");
-  const [rates, setRates] = useState({});
-  const [apiError, setApiError] = useState(null);
+  // const [rates, setRates] = useState({});
+  // const [apiError, setApiError] = useState(null);
 
-  useEffect(() => {
-    if (selectedCurrency) {
-      fetchExchangeRates();
-    }
-  }, [selectedCurrency]);
+  // useEffect(() => {
+  //   if (selectedCurrency) {
+  //     fetchExchangeRates();
+  //   }
+  // }, [selectedCurrency]);
 
-  const fetchExchangeRates = async () => {
-    try {
-      setApiLoading(true);
-      setApiError(null);
-      const response = await apiService.attributes.getRates({
-        currency: selectedCurrency,
-      });
+// const fetchExchangeRates = async () => {
+//   try {
+//     setApiLoading(true);
+//     setApiError(null);
+//     const response = await apiService.attributes.getRates();
 
-      if (response?.success && response?.rates) {
-        setRates(response.rates);
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (error) {
-      console.error("Exchange rate error:", error);
-      setApiError("Failed to fetch exchange rates. Please try again.");
-    } finally {
-      setApiLoading(false);
-    }
-  };
+//       if (response?.success && response?.rates) {
+//         setRates(response.rates);
+//       } else {
+//         throw new Error("Invalid response format");
+//       }
+//     } catch (error) {
+//       console.error("Exchange rate error:", error);
+//       setApiError("Failed to fetch exchange rates. Please try again.");
+//     } finally {
+//       setApiLoading(false);
+//     }
+  //   };
+  
+    const {
+      data: rates,
+      isFetching,
+      isPending,
+      error,
+    } = useQuery({
+      queryKey: ["fetch/rates"],
+      queryFn: () => apiService.attributes.getRates(),
+      placeholderData: keepPreviousData,
+    });
+  console.log(error);
+  
+  const {
+    data: banks,
+    // isFetching,
+    // isPending,
+    // error,
+  } = useQuery({
+    queryKey: ["fetch/banks"],
+    queryFn: () => apiService.attributes.getBanks('NGN'),
+    placeholderData: keepPreviousData,
+  });
+  const {
+    data: currencies,
+    // isFetching,
+    // isPending,
+    // error,
+  } = useQuery({
+    queryKey: ["fetch/currencies"],
+    queryFn: () => apiService.attributes.getCurrencies(),
+    placeholderData: keepPreviousData,
+  });
+  console.log(banks);
+  console.log(currencies);
+   console.log(rates);
 
+    const { mutate: loginFunc, isPending: Signing } = useMutation({
+      mutationFn: (data) => apiService.transactions.create(data),
+      onSuccess: (data) => {},
+      onError: (error) => {
+        setError({ general: [error.message] });
+      },
+    });
+  
   const handleAmountChange = (e) => {
     const value = e.target.value;
     setEspeeAmount(value);
 
-    if (selectedCurrency && rates && rates[selectedCurrency]) {
-      const rate = rates[selectedCurrency];
+    if (selectedCurrency && rates && rates.data.exchange_rates[selectedCurrency]) {
+      const rate = rates.data.exchange_rates[selectedCurrency];
       const calculatedAmount = (parseFloat(value || 0) * rate).toFixed(2);
       setLocalAmount(calculatedAmount);
       setIsValidAmount(parseFloat(value) > 0);
@@ -57,36 +103,37 @@ const SwapCard = () => {
   const handleSwap = async () => {
     if (!isValidAmount) return;
 
-    try {
-      setIsSwapping(true);
-      setApiError(null);
+    // try {
+    //   setIsSwapping(true);
+    //   setApiError(null);
 
-      const response = await apiService.transactions.create({
-        espee_amount: parseFloat(espeeAmount),
-        currency: selectedCurrency,
-      });
+    //   const response = await apiService.transactions.create({
+    //     espee_amount: parseFloat(espeeAmount),
+    //     currency: selectedCurrency,
+    //   });
 
-      if (response?.success) {
-        // Handle successful swap
-        console.log("Swap successful:", response);
-      } else {
-        throw new Error(response?.message || "Swap failed");
-      }
-    } catch (error) {
-      console.error("Swap error:", error);
-      setApiError(
-        error.message || "Failed to complete swap. Please try again."
-      );
-    } finally {
-      setIsSwapping(false);
-    }
+    //   if (response?.success) {
+    //     // Handle successful swap
+    //     console.log("Swap successful:", response);
+    //   } else {
+    //     throw new Error(response?.message || "Swap failed");
+    //   }
+    // } catch (error) {
+    //   console.error("Swap error:", error);
+    //   setApiError(
+    //     error.message || "Failed to complete swap. Please try again."
+    //   );
+    // } finally {
+    //   setIsSwapping(false);
+    // }
+    router.push('/swapExchnage');
   };
 
   return (
     <div className="bg-white rounded-[1.5rem] p-6 shadow-sm">
-      {apiError && (
+      {error && (
         <div className="inline-block text-red-500 mb-4 text-sm bg-red-50 px-3 py-2 rounded">
-          {apiError}
+          {/* {error} */}
         </div>
       )}
 
@@ -102,7 +149,7 @@ const SwapCard = () => {
             onChange={handleAmountChange}
             className="text-5xl font-bold w-full outline-none focus:ring-2 focus:ring-blue-500 rounded"
             placeholder="0.00"
-            disabled={apiLoading || isSwapping}
+            // disabled={apiLoading || isSwapping}
           />
         </div>
 
@@ -110,7 +157,7 @@ const SwapCard = () => {
           <p className="text-gray-600">
             YOU WILL RECEIVE{" "}
             <span className="text-green-500 font-medium">
-              {apiLoading
+              {isFetching
                 ? "Loading..."
                 : `${selectedCurrency} ${localAmount || "0.00"}`}
             </span>
@@ -128,11 +175,11 @@ const SwapCard = () => {
       <button
         onClick={handleSwap}
         className={`mt-6 w-72 py-3 rounded-lg flex justify-center items-center space-x-2 transition-colors ${
-          apiLoading || !isValidAmount || isSwapping
+          isFetching 
             ? "bg-gray-300 cursor-not-allowed"
             : "bg-red-500 hover:bg-red-600 text-white"
         }`}
-        disabled={apiLoading || !isValidAmount || isSwapping}
+        // disabled={apiLoading || !isValidAmount || isSwapping}
       >
         <span>{isSwapping ? "Processing..." : "Swap"}</span>
         {isSwapping ? (
@@ -143,12 +190,12 @@ const SwapCard = () => {
             alt="Swap"
             width={20}
             height={20}
-            className={apiLoading ? "opacity-50" : ""}
+            className={isFetching ? "opacity-50" : ""}
           />
         )}
       </button>
 
-      {apiLoading && (
+      {isFetching && (
         <p className="text-center text-sm text-gray-500 mt-2">
           Fetching latest rates...
         </p>
