@@ -22,7 +22,14 @@ const ExchangeContext = createContext(undefined);
 export function ExchangeProvider({ children }) {
   const [step, setStep] = useState(1);
   const [error, setError] = useState(null);
-  const [transactionData, setTransactionData] = useState({});
+  const [transactionData, setTransactionData] = useState({
+    espeeAmount: "",
+    localAmount: "",
+    selectedCurrency: "",
+    bankDetails: null,
+    transactionId: null,
+    status: null,
+  });
 
   const { data: ratesObject } = useQuery({
     queryKey: ["fetch/rates"],
@@ -39,8 +46,15 @@ export function ExchangeProvider({ children }) {
     queryFn: () => apiService.attributes.getCurrencies(),
   });
 
-  const { mutate: createTransaction } = useMutation({
+  const { mutate: createTransaction, data: transactionResponse } = useMutation({
     mutationFn: (data) => apiService.transactions.create(data),
+    onSuccess: (response) => {
+      setTransactionData((prev) => ({
+        ...prev,
+        transactionId: response.transaction_id,
+        status: "pending",
+      }));
+    },
     onError: (error) => setError(error.message),
   });
 
@@ -57,6 +71,17 @@ export function ExchangeProvider({ children }) {
     };
   }, [ratesObject]);
 
+  const resetTransaction = () => {
+    setTransactionData({
+      espeeAmount: "",
+      localAmount: "",
+      selectedCurrency: "",
+      bankDetails: null,
+      transactionId: null,
+      status: null,
+    });
+  };
+
   const contextValue = useMemo(
     () => ({
       step,
@@ -69,6 +94,7 @@ export function ExchangeProvider({ children }) {
       createTransaction,
       transactionData,
       setTransactionData,
+      resetTransaction,
     }),
     [
       step,
@@ -88,6 +114,7 @@ export function ExchangeProvider({ children }) {
     </ExchangeContext.Provider>
   );
 }
+
 
 export function useExchangeContext() {
   const context = useContext(ExchangeContext);

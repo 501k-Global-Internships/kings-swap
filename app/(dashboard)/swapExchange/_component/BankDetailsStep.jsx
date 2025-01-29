@@ -5,133 +5,77 @@ import { useExchangeContext } from "./ExchangeContext";
 import apiService from "@config/config";
 
 export function BankDetailsStep() {
-  const { banks, setStep, createTransaction, transactionData } =
-    useExchangeContext();
+  const {
+    banks,
+    setStep,
+    createTransaction,
+    transactionData,
+    setTransactionData,
+  } = useExchangeContext();
 
   const {
     control,
-    watch,
     setValue,
-    handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useFormContext();
 
-  const accountNumber = watch("accountNumber") || "";
-  const bankId = watch("bankId") || "";
-  const [accountName, setAccountName] = useState("");
+  const [isResolvingAccount, setIsResolvingAccount] = useState(false);
+  const [accountError, setAccountError] = useState("");
 
-  const handleAccountNumberBlur = async () => {
-    if (bankId && accountNumber.length === 10) {
+  const handleAccountNumberBlur = async (accountNumber, bankId) => {
+    if (bankId && accountNumber?.length === 10) {
+      setIsResolvingAccount(true);
+      setAccountError("");
+
       try {
         const accountData = await apiService.attributes.resolveAccount(
           bankId,
           accountNumber
         );
-        setAccountName(accountData.account_name || ""); // Fallback to empty string
-        setValue("accountName", accountData.account_name || "");
+
+        if (accountData.account_name) {
+          setValue("accountName", accountData.account_name);
+          setAccountError("");
+        } else {
+          setValue("accountName", "");
+          setAccountError("Could not resolve account name");
+        }
       } catch (err) {
-        setAccountName("");
         setValue("accountName", "");
+        setAccountError("Failed to verify account. Please check your details.");
+      } finally {
+        setIsResolvingAccount(false);
       }
     }
   };
 
-  const onSubmit = async (data) => {
-    try {
-      await createTransaction({
-        espee_amount: data.espeeAmount,
-        destination_currency: data.selectedCurrency,
-        bank_account: {
-          bank_id: data.bankId,
-          account_number: data.accountNumber,
-        },
-      });
-      setStep(3);
-    } catch (error) {
-      // Handle error
-    }
+  const handleContinue = () => {
+    setStep(3); // Directly move to step 3 (TransactionInProgressStep)
   };
 
   return (
     <div>
-      {/* Amount Information */}
       <div className="py-5 text-[1rem] mb-7 pl-14 bg-white rounded-lg border">
         <p className="mb-4 text-gray-700">
           Total amount payable in Espees:{" "}
           <strong>{transactionData.espeeAmount || 0} Espee(s)</strong>
         </p>
         <p className="text-gray-700">
-          Amount to receive in {transactionData.selectedCurrency || "Naira"} :{" "}
+          Amount to receive in {transactionData.selectedCurrency || "Naira"}:{" "}
           <strong>{transactionData.localAmount || "₦0.00"}</strong>
         </p>
       </div>
 
-      {/* Input Bank Details */}
       <div className="py-3 px-6 bg-white rounded-lg border">
         <h2 className="text-xl font-semibold mb-4">
           Enter your Receiving account
         </h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Account Name */}
-          <Controller
-            name="accountName"
-            control={control}
-            render={({ field }) => (
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Account name
-                </label>
-                <input
-                  {...field}
-                  type="text"
-                  readOnly
-                  value={accountName || ""}
-                  className="w-full p-3 border border-gray-300 rounded bg-gray-50"
-                  placeholder="Account name will appear here"
-                />
-              </div>
-            )}
-          />
-
-          {/* Account Number */}
-          <Controller
-            name="accountNumber"
-            control={control}
-            rules={{
-              required: "Account number is required",
-              pattern: {
-                value: /^\d{10}$/,
-                message: "Account number must be 10 digits",
-              },
-            }}
-            render={({ field }) => (
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Account number
-                </label>
-                <input
-                  {...field}
-                  type="text"
-                  value={field.value || ""} // Ensure it's controlled
-                  onBlur={handleAccountNumberBlur}
-                  maxLength={10}
-                  className="w-full p-3 border border-gray-300 rounded"
-                  placeholder="Enter your account number"
-                />
-                {errors.accountNumber && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.accountNumber.message}
-                  </p>
-                )}
-              </div>
-            )}
-          />
-
-          {/* Bank */}
+        <div className="space-y-4">
           <Controller
             name="bankId"
             control={control}
+            defaultValue=""
             rules={{ required: "Bank selection is required" }}
             render={({ field }) => (
               <div>
@@ -139,8 +83,8 @@ export function BankDetailsStep() {
                 <div className="relative">
                   <select
                     {...field}
-                    value={field.value || ""} // Ensure it's controlled
                     className="w-full p-3 border border-gray-300 rounded appearance-none"
+                    disabled={isSubmitting}
                   >
                     <option value="">Select Bank</option>
                     {banks.map((bank) => (
@@ -160,18 +104,86 @@ export function BankDetailsStep() {
             )}
           />
 
+          <Controller
+            name="accountNumber"
+            control={control}
+            defaultValue=""
+            rules={{
+              required: "Account number is required",
+              pattern: {
+                value: /^\d{10}$/,
+                message: "Account number must be 10 digits",
+              },
+            }}
+            render={({ field }) => (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Account number
+                </label>
+                <input
+                  {...field}
+                  type="text"
+                  maxLength={10}
+                  className="w-full p-3 border border-gray-300 rounded"
+                  placeholder="Enter your account number"
+                  onBlur={() => {
+                    field.onBlur();
+                    handleAccountNumberBlur(
+                      field.value,
+                      control._formValues.bankId
+                    );
+                  }}
+                  disabled={isSubmitting || isResolvingAccount}
+                />
+                {errors.accountNumber && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.accountNumber.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+
+          <Controller
+            name="accountName"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Account name
+                </label>
+                <input
+                  {...field}
+                  type="text"
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded bg-gray-50"
+                  placeholder={
+                    isResolvingAccount
+                      ? "Verifying account..."
+                      : "Account name will appear here"
+                  }
+                />
+                {accountError && (
+                  <p className="text-red-500 text-sm mt-1">{accountError}</p>
+                )}
+              </div>
+            )}
+          />
+
           <button
-            type="submit"
-            disabled={!accountNumber || !bankId || !accountName}
+            type="button"
+            onClick={handleContinue}
+            disabled={isResolvingAccount}
             className={`w-full p-3 rounded mt-6 transition-colors ${
-              !accountNumber || !bankId || !accountName
+              isResolvingAccount
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-[#2467E3] text-white hover:bg-[#1e51b3]"
             }`}
           >
-            Continue
+            {isResolvingAccount ? "Processing..." : "Continue"}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useFormContext } from "react-hook-form";
 
 import Coin from "@assets/coin2.svg";
 import Info from "@assets/info-circle.svg";
@@ -23,7 +24,7 @@ export function TransactionCompletedStep() {
     <div className="text-center max-w-md mx-auto">
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h2 className="font-medium mb-4">
-          Your espees transaction is processing
+          Your espees transaction is completed
         </h2>
         <Image
           src={Coin}

@@ -1,4 +1,5 @@
-"use client";
+'use client'
+
 import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +22,6 @@ import {
 export function SwapExchangeLayout() {
   const router = useRouter();
   const { step, setStep, error } = useExchangeContext();
-
   const methods = useForm({
     resolver: zodResolver(TransactionSchema),
     mode: "onChange",
@@ -31,7 +31,6 @@ export function SwapExchangeLayout() {
     step === 1 ? router.push("/dashboard") : setStep((prev) => prev - 1);
   };
 
-  // Move renderStepContent inside the component and pass step as a parameter
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -67,7 +66,6 @@ export function SwapExchangeLayout() {
             <span>{step === 1 ? "Home" : "Back"}</span>
           </button>
         </div>
-
         <FormProvider {...methods}>
           <ErrorBoundary>
             {error && <ErrorDisplay error={error} />}
