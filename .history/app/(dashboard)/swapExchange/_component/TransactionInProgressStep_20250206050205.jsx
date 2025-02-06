@@ -8,7 +8,21 @@ import { useExchangeContext } from "./ExchangeContext";
 export function TransactionInProgressStep() {
   
 
-  
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    try {
+      if (transactionData.transactionId) {
+        // Call API to cancel transaction
+        await apiService.transactions.cancel(transactionData.transactionId);
+      }
+      resetTransaction();
+      setStep(1); // Return to first step
+    } catch (error) {
+      console.error("Failed to cancel transaction:", error);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="text-center max-w-md mx-auto">

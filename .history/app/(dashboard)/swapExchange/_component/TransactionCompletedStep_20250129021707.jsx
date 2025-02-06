@@ -9,7 +9,16 @@ import Info from "@assets/info-circle.svg";
 import { useExchangeContext } from "./ExchangeContext";
 
 export function TransactionCompletedStep() {
+  const router = useRouter();
+  const { setStep } = useExchangeContext();
+  const { watch } = useFormContext();
 
+  const localAmount = watch("localAmount");
+  const selectedCurrency = watch("selectedCurrency");
+
+  const handleNewTransaction = () => {
+    setStep(1);
+  };
 
   return (
     <div className="text-center max-w-md mx-auto">

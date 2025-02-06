@@ -121,7 +121,55 @@ import { useExchangeContext } from "./ExchangeContext";
 
 export function AmountSelectionStep() {
   const { currencies, calculateExchangeAmount, setStep, setTransactionData } =
+    useExchangeContext();
 
+  const {
+    control,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useFormContext();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Initialize form values if not set
+  useEffect(() => {
+    setValue("espeeAmount", "");
+    setValue("localAmount", "");
+    setValue("selectedCurrency", currencies[0]?.code || "");
+  }, [currencies, setValue]);
+
+  const espeeAmount = watch("espeeAmount") || "";
+  const localAmount = watch("localAmount") || "";
+  const selectedCurrency = watch("selectedCurrency") || "";
+
+  const handleAmountChange = (value) => {
+    const numericValue = Number(value);
+
+    if (numericValue > 0 && selectedCurrency) {
+      const result = calculateExchangeAmount(numericValue, selectedCurrency);
+      setValue("localAmount", result?.total?.toString() || "");
+    }
+  };
+
+  const handleCurrencyChange = (currency) => {
+    setValue("selectedCurrency", currency);
+    setShowDropdown(false);
+
+    if (espeeAmount) {
+      handleAmountChange(espeeAmount);
+    }
+  };
+
+  const handleContinue = () => {
+    if (espeeAmount && localAmount) {
+      setTransactionData({
+        espeeAmount,
+        localAmount,
+        selectedCurrency,
+      });
+      setStep(2); // Move to BankDetailsStep
+    }
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm max-w-md mx-auto">

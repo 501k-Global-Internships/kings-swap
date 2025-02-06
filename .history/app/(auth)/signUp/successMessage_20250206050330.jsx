@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const SuccessMessage = ({ onLogin, showSuccess, isLoading, error, retryVerification }) => {
 
+  const router = useRouter();
 
 
   const handleLogin = () => {
-    router.push("/loginPage");
+    router.push("/");
   };
 
   if (isLoading) {

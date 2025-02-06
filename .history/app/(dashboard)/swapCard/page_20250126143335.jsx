@@ -9,7 +9,99 @@ import { useRouter } from "next/navigation";
 
 
 const SwapCard = () => {
- 
+  const router = useRouter();
+  // const [apiLoading, setApiLoading] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
+  const [isValidAmount, setIsValidAmount] = useState(false);
+  const [espeeAmount, setEspeeAmount] = useState("");
+  const [localAmount, setLocalAmount] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState("NGN");
+  // const [rates, setRates] = useState({});
+  // const [apiError, setApiError] = useState(null);
+
+  // useEffect(() => {
+  //   if (selectedCurrency) {
+  //     fetchExchangeRates();
+  //   }
+  // }, [selectedCurrency]);
+
+// const fetchExchangeRates = async () => {
+//   try {
+//     setApiLoading(true);
+//     setApiError(null);
+//     const response = await apiService.attributes.getRates();
+
+//       if (response?.success && response?.rates) {
+//         setRates(response.rates);
+//       } else {
+//         throw new Error("Invalid response format");
+//       }
+//     } catch (error) {
+//       console.error("Exchange rate error:", error);
+//       setApiError("Failed to fetch exchange rates. Please try again.");
+//     } finally {
+//       setApiLoading(false);
+//     }
+  //   };
+  
+    const {
+      data: rates,
+      isFetching,
+      isPending,
+      error,
+    } = useQuery({
+      queryKey: ["fetch/rates"],
+      queryFn: () => apiService.attributes.getRates(),
+      placeholderData: keepPreviousData,
+    });
+  console.log(error);
+  
+  const {
+    data: banks,
+    // isFetching,
+    // isPending,
+    // error,
+  } = useQuery({
+    queryKey: ["fetch/banks"],
+    queryFn: () => apiService.attributes.getBanks('NGN'),
+    placeholderData: keepPreviousData,
+  });
+  const {
+    data: currencies,
+    // isFetching,
+    // isPending,
+    // error,
+  } = useQuery({
+    queryKey: ["fetch/currencies"],
+    queryFn: () => apiService.attributes.getCurrencies(),
+    placeholderData: keepPreviousData,
+  });
+  console.log(banks);
+  console.log(currencies);
+   console.log(rates);
+
+    const { mutate: loginFunc, isPending: Signing } = useMutation({
+      mutationFn: (data) => apiService.transactions.create(data),
+      onSuccess: (data) => {},
+      onError: (error) => {
+        setError({ general: [error.message] });
+      },
+    });
+  
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    setEspeeAmount(value);
+
+    if (selectedCurrency && rates && rates.data.exchange_rates[selectedCurrency]) {
+      const rate = rates.data.exchange_rates[selectedCurrency];
+      const calculatedAmount = (parseFloat(value || 0) * rate).toFixed(2);
+      setLocalAmount(calculatedAmount);
+      setIsValidAmount(parseFloat(value) > 0);
+    }
+  };
+
+  const handleSwap = async () => {
+    if (!isValidAmount) return;
 
     // try {
     //   setIsSwapping(true);

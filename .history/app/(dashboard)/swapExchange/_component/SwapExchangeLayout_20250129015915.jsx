@@ -28,6 +28,8 @@ export function SwapExchangeLayout() {
   });
 
   const handleBack = () => {
+    step === 1 ? router.push("/dashboard") : setStep((prev) => prev - 1);
+  };
 
   const renderStepContent = () => {
     switch (step) {

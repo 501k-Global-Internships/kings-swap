@@ -5,7 +5,53 @@ import { useExchangeContext } from "./ExchangeContext";
 import apiService from "@config/config";
 
 export function BankDetailsStep() {
- 
+  const {
+    banks,
+    setStep,
+    createTransaction,
+    transactionData,
+    setTransactionData,
+  } = useExchangeContext();
+
+  const {
+    control,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useFormContext();
+
+  const [isResolvingAccount, setIsResolvingAccount] = useState(false);
+  const [accountError, setAccountError] = useState("");
+
+  const handleAccountNumberBlur = async (accountNumber, bankId) => {
+    if (bankId && accountNumber?.length === 10) {
+      setIsResolvingAccount(true);
+      setAccountError("");
+
+      try {
+        const accountData = await apiService.attributes.resolveAccount(
+          bankId,
+          accountNumber
+        );
+
+        if (accountData.account_name) {
+          setValue("accountName", accountData.account_name);
+          setAccountError("");
+        } else {
+          setValue("accountName", "");
+          setAccountError("Could not resolve account name");
+        }
+      } catch (err) {
+        setValue("accountName", "");
+        setAccountError("Failed to verify account. Please check your details.");
+      } finally {
+        setIsResolvingAccount(false);
+      }
+    }
+  };
+
+  const handleContinue = () => {
+    setStep(3); // Directly move to step 3 (TransactionInProgressStep)
+  };
 
   return (
     <div>
