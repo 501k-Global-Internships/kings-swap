@@ -1,12 +1,12 @@
 "use client";
 
 import axios from "axios";
-import { z } from "zod"; 
+import { z } from "zod";
 
 const RATE_LIMIT_CONFIG = {
   maxRetries: 3,
-  baseDelay: 1000, 
-  maxDelay: 10000, 
+  baseDelay: 1000,
+  maxDelay: 10000,
 };
 
 // Validation schemas
@@ -70,9 +70,16 @@ const API_CONFIG = {
 
 // Error Handler Class
 class ApiError extends Error {
-  constructor(message, status, data, retryable = false, errorCode = null, originalError = null) {
+  constructor(
+    message,
+    status,
+    data,
+    retryable = false,
+    errorCode = null,
+    originalError = null
+  ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.data = data;
     this.retryable = retryable;
@@ -89,52 +96,54 @@ class ApiError extends Error {
     if (error.response) {
       // Server responded with error
       return {
-        message: error.response.data?.message || `HTTP Error: ${error.response.status}`,
+        message:
+          error.response.data?.message ||
+          `HTTP Error: ${error.response.status}`,
         status: error.response.status,
         data: error.response.data,
         errorCode: `SERVER_${error.response.status}`,
-        retryable: this.isRetryable(error.response.status)
+        retryable: this.isRetryable(error.response.status),
       };
     }
-    
+
     if (error.request) {
       // Request made but no response received
-      if (error.code === 'ECONNABORTED') {
+      if (error.code === "ECONNABORTED") {
         return {
           message: `Request timeout after ${error.config?.timeout}ms`,
           status: 408,
           data: null,
-          errorCode: 'REQUEST_TIMEOUT',
-          retryable: true
+          errorCode: "REQUEST_TIMEOUT",
+          retryable: true,
         };
       }
-      
+
       if (!navigator.onLine) {
         return {
-          message: 'No internet connection',
+          message: "No internet connection",
           status: -1,
           data: null,
-          errorCode: 'NO_INTERNET',
-          retryable: true
+          errorCode: "NO_INTERNET",
+          retryable: true,
         };
       }
-      
+
       return {
-        message: 'No response from server',
+        message: "No response from server",
         status: -1,
         data: null,
-        errorCode: 'NO_RESPONSE',
-        retryable: true
+        errorCode: "NO_RESPONSE",
+        retryable: true,
       };
     }
-    
+
     // Something happened in setting up the request
     return {
-      message: error.message || 'Request configuration error',
+      message: error.message || "Request configuration error",
       status: -2,
       data: null,
-      errorCode: 'REQUEST_SETUP_ERROR',
-      retryable: false
+      errorCode: "REQUEST_SETUP_ERROR",
+      retryable: false,
     };
   }
 }
@@ -450,20 +459,20 @@ class ApiService {
     },
 
     getBanks: async (currency) => {
-  try {
-    const response = await this.axios.get(
-      this.config.endpoints.attributes.banks, 
-      {
-        params: {
-          currency: currency
-        }
+      try {
+        const response = await this.axios.get(
+          this.config.endpoints.attributes.banks,
+          {
+            params: {
+              currency: currency,
+            },
+          }
+        );
+        return response.data?.data.banks || [];
+      } catch (error) {
+        throw new Error(error);
       }
-    );
-    return response.data?.data.banks || [];
-  } catch (error) {
-    throw new Error(error);
-  }
-},
+    },
 
     getRates: async () => {
       try {
@@ -551,7 +560,6 @@ class ApiService {
 }
 // Create API service instance
 const apiService = new ApiService(API_CONFIG);
-
 
 export default apiService;
 export { API_CONFIG, ApiError };

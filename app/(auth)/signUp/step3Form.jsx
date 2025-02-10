@@ -54,31 +54,30 @@ const Step3Form = ({
     formState: { errors, isValid },
   } = methods;
 
-  const password = watch('password');
-  
+  const password = watch("password");
+
   const passwordChecks = {
     length: {
       met: password?.length >= 8,
-      text: "At least 8 characters"
+      text: "At least 8 characters",
     },
     uppercase: {
-      met: /[A-Z]/.test(password || ''),
-      text: "At least one uppercase letter"
+      met: /[A-Z]/.test(password || ""),
+      text: "At least one uppercase letter",
     },
     lowercase: {
-      met: /[a-z]/.test(password || ''),
-      text: "At least one lowercase letter"
+      met: /[a-z]/.test(password || ""),
+      text: "At least one lowercase letter",
     },
     number: {
-      met: /\d/.test(password || ''),
-      text: "At least one number"
+      met: /\d/.test(password || ""),
+      text: "At least one number",
     },
     special: {
-      met: /[^A-Za-z0-9]/.test(password || ''),
-      text: "At least one special character"
-    }
+      met: /[^A-Za-z0-9]/.test(password || ""),
+      text: "At least one special character",
+    },
   };
-
 
   const onSubmit = async (data) => {
     onNext(data);

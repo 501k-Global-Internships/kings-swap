@@ -1,6 +1,6 @@
-import React from 'react'
-import { SwapExchangeLayout } from './_component/SwapExchangeLayout'
-import { ExchangeProvider } from './_component/ExchangeContext';
+import React from "react";
+import { SwapExchangeLayout } from "./_component/SwapExchangeLayout";
+import { ExchangeProvider } from "./_component/ExchangeContext";
 
 const SwapExchange = () => {
   return (
@@ -8,6 +8,6 @@ const SwapExchange = () => {
       <SwapExchangeLayout />
     </ExchangeProvider>
   );
-}
+};
 
-export default SwapExchange
+export default SwapExchange;

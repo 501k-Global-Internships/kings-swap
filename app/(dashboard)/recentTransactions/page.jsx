@@ -17,7 +17,36 @@ const TableHeader = () => (
 const TransactionRow = ({ transaction }) => {
   if (!transaction) return null;
 
-  
+  const date = new Date(transaction.created_at).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const amount = transaction.total_espee_amount
+    ? `₦ ${transaction.total_espee_amount.toLocaleString()}`
+    : "N/A";
+
+  const getStatusColor = (status) => {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
+      case "completed":
+        return "text-green-500";
+      case "failed":
+        return "text-red-500";
+      case "processing":
+        return "text-yellow-500";
+      case "pending":
+        return "text-blue-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const status = transaction.processing_status || "Unknown";
+  const statusColor = getStatusColor(status);
 
   return (
     <div className="flex items-center py-3 text-sm border-b hover:bg-gray-50 transition-colors duration-200">
@@ -43,17 +72,17 @@ const TransactionsTable = () => {
   //   fetchTransactions();
   // }, [fetchTransactions]);
 
-   const {
-     data: transaction,
-     isFetching: loading,
-     isPending,
-     error,
-   } = useQuery({
-     queryKey: ["fetch/transaction"],
-     queryFn: () => apiService.transactions.list("NGN"),
-     placeholderData: keepPreviousData,
-   });
-console.log(error);
+  const {
+    data: transaction,
+    isFetching: loading,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["fetch/transaction"],
+    queryFn: () => apiService.transactions.list("NGN"),
+    placeholderData: keepPreviousData,
+  });
+  console.log(error);
 
   if (loading) {
     return (

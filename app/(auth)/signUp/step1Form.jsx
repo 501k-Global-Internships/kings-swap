@@ -3,13 +3,10 @@ import React, { useState } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 
-
 const Step1Form = ({ onNext, countries, isLoading }) => {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
-
-
 
   const handleContinue = () => {
     if (!selectedCountry) {

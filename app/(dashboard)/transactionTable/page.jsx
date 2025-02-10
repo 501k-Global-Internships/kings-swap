@@ -5,6 +5,68 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import React from "react";
 
 const TransactionTable = () => {
+  // const { loading, error, transactions, fetchTransactions } = useExchange();
+
+  // React.useEffect(() => {
+  //   fetchTransactions();
+  // }, [fetchTransactions]);
+
+  const {
+    data: transaction,
+    isFetching: loading,
+    isPending,
+    error,
+  } = useQuery({
+    queryKey: ["fetch/transaction"],
+    queryFn: () => apiService.transaction.list("NGN"),
+    placeholderData: keepPreviousData,
+  });
+
+  const getStatusBadgeStyle = (status) => {
+    const baseStyle = "px-3 py-1 rounded-full text-sm font-medium";
+
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return `${baseStyle} bg-green-100 text-green-800`;
+      case "failed":
+        return `${baseStyle} bg-red-100 text-red-800`;
+      case "processing":
+        return `${baseStyle} bg-yellow-100 text-yellow-800`;
+      case "pending":
+        return `${baseStyle} bg-blue-100 text-blue-800`;
+      default:
+        return `${baseStyle} bg-gray-100 text-gray-800`;
+    }
+  };
+
+  const formatAmount = (amount, currency = "₦") => {
+    if (amount == null) return "N/A";
+    return `${currency} ${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full p-8 flex justify-center items-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-600">Loading transactions...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

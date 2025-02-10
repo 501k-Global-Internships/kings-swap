@@ -6,9 +6,47 @@ import Close from "@assets/close-circle.svg";
 import { useExchangeContext } from "./ExchangeContext";
 
 export function TransactionInProgressStep() {
-  
+  const { setStep, transactionData, resetTransaction } = useExchangeContext();
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [isCancelling, setIsCancelling] = useState(false);
 
-  
+  useEffect(() => {
+    let isMounted = true;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (isMounted) {
+            setTimeout(() => setStep(4), 0); // Safely update state after render
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, [setStep]);
+
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    try {
+      if (transactionData.transactionId) {
+        // Call API to cancel transaction
+        await apiService.transactions.cancel(transactionData.transactionId);
+      }
+      resetTransaction();
+      setStep(1); // Return to first step
+    } catch (error) {
+      console.error("Failed to cancel transaction:", error);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="text-center max-w-md mx-auto">

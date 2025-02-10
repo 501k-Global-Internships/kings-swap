@@ -95,15 +95,12 @@ export const useSignUpForm = () => {
     verifyEmail({
       email: formData.email,
       code,
-    })
+    });
   };
 
   const handleResendOTP = async () => {
-    resendOTP(
-      formData.email
-    )
+    resendOTP(formData.email);
   };
-
 
   return {
     formData,

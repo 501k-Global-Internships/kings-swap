@@ -3,7 +3,6 @@ import React from "react";
 import Layout from "../_component/Layout";
 import TransactionTable from "../transactionTable/page";
 
-
 const TransactionPage = () => {
   return (
     <Layout>
