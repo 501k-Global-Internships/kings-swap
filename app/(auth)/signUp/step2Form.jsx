@@ -6,16 +6,17 @@ import { FormProvider, useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-
 const schema = z.object({
   first_name: z.string().min(4, "First name must be at least 2 characters"),
   last_name: z.string().min(4, "Last name must be at least 2 characters"),
-  kingschat_username: z.string().min(4, "Kingschat username must be at least 4 characters"),
+  kingschat_username: z
+    .string()
+    .min(4, "Kingschat username must be at least 4 characters"),
   gender: z.string().min(1, "Gender is required"),
   email: z.string().email("Invalid email address"),
   phone_number: z.string().min(10, "Invalid phone number"),
   country_id: z.string().min(1, "Please select a country"),
-})
+});
 
 const PhoneNumberInput = forwardRef(({ value, onChange, error }, ref) => {
   const {
@@ -50,7 +51,7 @@ const PhoneNumberInput = forwardRef(({ value, onChange, error }, ref) => {
   return (
     <div className="relative w-full">
       <input
-      ref={ref}
+        ref={ref}
         type="tel"
         value={stripCountryCode(
           value,
@@ -158,7 +159,7 @@ const Step2Form = ({
     formState: { errors, isDirty, touchedFields },
   } = methods;
 
-  const gender = watch('gender');
+  const gender = watch("gender");
 
   const onSubmit = useCallback(async (data) => {
     onNext(data);
@@ -275,9 +276,7 @@ const Step2Form = ({
                 } rounded p-2 text-sm flex justify-between items-center cursor-pointer`}
                 onClick={() => setIsGenderOpen(!isGenderOpen)}
               >
-                <span
-                  className={gender ? "text-black" : "text-gray-400"}
-                >
+                <span className={gender ? "text-black" : "text-gray-400"}>
                   {gender || "Select your gender"}
                 </span>
                 <ChevronDown className="text-gray-400" size={16} />
@@ -349,7 +348,9 @@ const Step2Form = ({
                   ref={ref}
                   value={value}
                   onChange={onChange}
-                  error={errors.phone_number?.message || serverErrors?.phone_number}
+                  error={
+                    errors.phone_number?.message || serverErrors?.phone_number
+                  }
                 />
               )}
             />

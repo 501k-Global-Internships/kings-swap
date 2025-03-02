@@ -1,72 +1,78 @@
 "use client";
-
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 
-const SuccessMessage = ({ onLogin, showSuccess, isLoading, error, retryVerification }) => {
+const Step4Form = ({ onVerify, onResendCode, isLoading, error }) => {
+  const [otp, setOtp] = useState(new Array(6).fill(""));
 
-  const router = useRouter();
+  const handleChange = (element, index) => {
+    if (isNaN(element.value)) return false;
+    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
 
-
-  const handleLogin = () => {
-    router.push("/loginPage");
+    // Focus next input
+    if (element.nextSibling) {
+      element.nextSibling.focus();
+    }
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full max-w-md mx-auto">
-        <div className="bg-white rounded-lg p-6 mt-16 shadow-md text-center">
-          <div className="animate-pulse">
-            <h2 className="text-xl font-semibold mb-4">
-              Verifying your email...
-            </h2>
-            <div className="w-12 h-12 mx-auto border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleVerify = async () => {
+    const code = otp.join("");
+    await onVerify(code);
+  };
 
-  if (error) {
-    return (
-      <div className="w-full max-w-md mx-auto">
-        <div className="bg-white rounded-lg p-6 mt-16 shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Verification Failed</h2>
-          <div className="bg-red-100 text-red-600 p-3 rounded-md mb-4 text-center">
-            {error}
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-white border border-red-500 p-2 rounded-md hover:bg-red-50 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleResendCode = async () => {
+    await onResendCode();
+  };
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
-      {showSuccess && (
-        <div className="absolute top-0 left-0 right-0 bg-[#37CA52] text-white py-2 px-4 rounded-md mb-4 text-center">
-          Account creation Successful!
+    <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-2xl font-semibold mb-4 text-center">
+        Verify your address
+      </h2>
+      <p className="text-sm text-gray-600 mb-6 text-center">
+        Please enter the OTP sent to the email address you provided
+      </p>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-md">
+          {error}
         </div>
       )}
-      <div className="bg-white rounded-lg p-6 mt-16 shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Verify your address</h2>
-        <div className="bg-[#37BE1C] text-white p-3 rounded-md mb-4 text-center">
-          Account verified successfully!
-        </div>
+
+      <div className="grid grid-cols-6 gap-2 mb-6">
+        {otp.map((data, index) => (
+          <input
+            key={index}
+            type="text"
+            maxLength="1"
+            className="w-full h-12 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            value={data}
+            onChange={(e) => handleChange(e.target, index)}
+            onFocus={(e) => e.target.select()}
+            disabled={isLoading}
+          />
+        ))}
+      </div>
+
+      <div className="text-sm text-center mb-6">
+        <p className="text-gray-600 mb-1">Didn't receive OTP?</p>
         <button
-          onClick={handleLogin}
-          className="w-full bg-white border border-[#37BE1C] p-2 rounded-md hover:bg-green-50 transition-colors"
+          onClick={handleResendCode}
+          className="text-blue-500 hover:underline focus:outline-none disabled:text-blue-300"
+          disabled={isLoading}
         >
-          Go to Login
+          Resend code
         </button>
       </div>
+
+      <button
+        onClick={handleVerify}
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 disabled:bg-blue-300"
+        disabled={isLoading || otp.some((digit) => !digit)}
+      >
+        {isLoading ? "Verifying..." : "Verify your account"}
+      </button>
     </div>
   );
 };
 
-export default SuccessMessage;
+export default Step4Form;
