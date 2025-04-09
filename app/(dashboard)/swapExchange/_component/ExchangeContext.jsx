@@ -2,20 +2,6 @@
 import React, { createContext, useContext, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import apiService from "@config/config";
-import { number } from "zod";
-
-// interface ExchangeContextType {
-//   step;
-//   rates;
-//   banks;
-//   currencies;
-//     error;
-//   calculateExchangeAmount: (
-//     amount,
-//     currency
-//   ) => { total};
-//   createTransaction: (data) => Promise;
-// }
 
 const ExchangeContext = createContext(undefined);
 
@@ -27,74 +13,142 @@ export function ExchangeProvider({ children }) {
     localAmount: "",
     selectedCurrency: "",
     bankDetails: null,
-    transactionId: null,
+    id: null,
     status: null,
+    reference: null,
+    payment: null,
+    fiat_amount: "",
+    currency: "",
+    espee_amount: "",
+    expires_at: null,
+    created_at: null,
   });
 
+  // Fetch rates
   const { data: ratesObject } = useQuery({
     queryKey: ["fetch/rates"],
     queryFn: () => apiService.attributes.getRates(),
   });
 
+  // Fetch banks
   const { data: banks } = useQuery({
     queryKey: ["fetch/banks"],
     queryFn: () => apiService.attributes.getBanks("NGN"),
   });
 
+  // Fetch currencies
   const { data: currencies } = useQuery({
     queryKey: ["fetch/currencies"],
     queryFn: () => apiService.attributes.getCurrencies(),
   });
 
+  // Create transaction mutation
   const { mutate: createTransaction, data: transactionResponse } = useMutation({
     mutationFn: (data) => apiService.transactions.create(data),
     onSuccess: (response) => {
+      // Make sure to handle both response.data and direct response cases
+      const responseData = response?.data || response;
+
       setTransactionData((prev) => ({
         ...prev,
-        transactionId: response.transaction_id,
-        status: "pending",
+        id: responseData.id,
+        reference: responseData.reference,
+        status: responseData.payment_status,
+        payment: responseData.payment,
+        fiat_amount: responseData.fiat_amount,
+        currency: responseData.currency,
+        espee_amount: responseData.espee_amount,
+        expires_at: responseData.expires_at,
+        created_at: responseData.created_at,
       }));
     },
-    onError: (error) => setError(error.message),
+    onError: (error) =>
+      setError(error?.message || "Transaction creation failed"),
   });
 
+  // Add getTransactions query
+  const {
+    data: transactions,
+    refetch: refetchTransactions,
+    isLoading: isLoadingTransactions,
+  } = useQuery({
+    queryKey: ["fetch/transactions"],
+    queryFn: () =>
+      apiService.transactions.list(transactionData.selectedCurrency || "NGN"),
+    enabled: false, // Don't fetch automatically on component mount
+  });
+
+  // Add getTransactionDetails query with enabled: false flag
+  const {
+    data: transactionDetails,
+    refetch: fetchTransactionDetails,
+    isLoading: isLoadingTransactionDetails,
+  } = useQuery({
+    queryKey: ["fetch/transaction-details", transactionData.id],
+    queryFn: () => apiService.transactions.getDetails(transactionData.id),
+    enabled: false, // Only run when explicitly called
+  });
+
+  // Function to get transaction details
+  const getTransactionDetails = (id) => {
+    setTransactionData((prev) => ({ ...prev, id }));
+    return fetchTransactionDetails();
+  };
+
+  // Calculate exchange amount
   const calculateExchangeAmount = useMemo(() => {
     return (amount, currency) => {
-      const rate = ratesObject?.data.exchange_rates?.[currency];
-      const percentageCharge = ratesObject?.data.percentage_charge;
-
+      const rate = ratesObject?.data?.exchange_rates?.[currency];
+      const percentageCharge = ratesObject?.data?.percentage_charge;
       if (!rate || !percentageCharge) return null;
-
       return {
         total: amount * rate * (1 - percentageCharge / 100),
       };
     };
   }, [ratesObject]);
 
+  // Reset transaction function
   const resetTransaction = () => {
     setTransactionData({
       espeeAmount: "",
       localAmount: "",
       selectedCurrency: "",
       bankDetails: null,
-      transactionId: null,
+      id: null,
       status: null,
+      reference: null,
+      payment: null,
+      fiat_amount: "",
+      currency: "",
+      espee_amount: "",
+      expires_at: null,
+      created_at: null,
     });
   };
 
+  // Context value
   const contextValue = useMemo(
     () => ({
       step,
       setStep,
-      rates: ratesObject?.data.exchange_rates || {},
+      rates: ratesObject?.data?.exchange_rates || {},
       banks: banks || [],
       currencies: currencies || [],
       error,
+      setError,
       calculateExchangeAmount,
       createTransaction,
       transactionData,
       setTransactionData,
       resetTransaction,
+      // Add new transaction-related functions
+      transactions: transactions?.data || [],
+      paginationData: transactions?.pagination || {},
+      getTransactions: refetchTransactions,
+      isLoadingTransactions,
+      getTransactionDetails,
+      transactionDetails: transactionDetails?.data,
+      isLoadingTransactionDetails,
     }),
     [
       step,
@@ -105,6 +159,12 @@ export function ExchangeProvider({ children }) {
       calculateExchangeAmount,
       createTransaction,
       transactionData,
+      // Add dependencies for new additions
+      transactions,
+      refetchTransactions,
+      isLoadingTransactions,
+      transactionDetails,
+      isLoadingTransactionDetails,
     ]
   );
 

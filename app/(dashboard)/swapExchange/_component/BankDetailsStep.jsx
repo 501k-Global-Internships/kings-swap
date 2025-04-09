@@ -11,6 +11,7 @@ export function BankDetailsStep() {
     createTransaction,
     transactionData,
     setTransactionData,
+    setError,
   } = useExchangeContext();
 
   const {
@@ -21,6 +22,7 @@ export function BankDetailsStep() {
 
   const [isResolvingAccount, setIsResolvingAccount] = useState(false);
   const [accountError, setAccountError] = useState("");
+  const [isSubmittingTransaction, setIsSubmittingTransaction] = useState(false);
 
   const handleAccountNumberBlur = async (accountNumber, bankId) => {
     if (bankId && accountNumber?.length === 10) {
@@ -50,41 +52,39 @@ export function BankDetailsStep() {
   };
 
   const handleContinue = async () => {
-    console.log({
-      espee_amount: transactionData.espeeAmount,
-      destination_currency: transactionData.selectedCurrency,
-      bank_account: {
-        account_number: control._formValues.accountNumber,
-        bank_id: control._formValues.bankId,
-      },
-    });
-console.log(transactionData);
+    setIsSubmittingTransaction(true);
+    setError(null);
 
     try {
-      const createTransaction = await apiService.transactions.create({
-        espee_amount: transactionData.espeeAmount,
+      const transactionPayload = {
+        espee_amount: parseFloat(transactionData.espeeAmount),
         destination_currency: transactionData.selectedCurrency,
         bank_account: {
           account_number: control._formValues.accountNumber,
           bank_id: control._formValues.bankId,
         },
-      });
-      console.log(createTransaction);
+      };
 
-      if (createTransaction) {
-        setTransactionData(createTransaction);
-        setStep(3); // Directly move to step 3 (TransactionInProgressStep)
-      } else {
-        // Handle error
-      }
+      await createTransaction(transactionPayload);
+
+      // The ExchangeContext's createTransaction mutation will handle updating
+      // the transactionData state with the API response via onSuccess callback
+
+      // Move to transaction in progress step
+      setStep(3);
     } catch (error) {
-      // Handle error message
+      console.error("Transaction creation failed:", error);
+      setError(
+        error?.message || "Failed to create transaction. Please try again."
+      );
+    } finally {
+      setIsSubmittingTransaction(false);
     }
   };
 
   return (
     <div>
-      <div className="py-5 text-[1rem] mb-7 pl-14 bg-white rounded-lg border">
+      <div className="py-5 text-base mb-7 pl-6 bg-white rounded-lg border">
         <p className="mb-4 text-gray-700">
           Total amount payable in Espees:{" "}
           <strong>{transactionData.espeeAmount || 0} Espee(s)</strong>
@@ -113,7 +113,7 @@ console.log(transactionData);
                   <select
                     {...field}
                     className="w-full p-3 border border-gray-300 rounded appearance-none"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isSubmittingTransaction}
                   >
                     <option value="">Select Bank</option>
                     {banks.map((bank) => (
@@ -162,7 +162,11 @@ console.log(transactionData);
                       control._formValues.bankId
                     );
                   }}
-                  disabled={isSubmitting || isResolvingAccount}
+                  disabled={
+                    isSubmitting ||
+                    isResolvingAccount ||
+                    isSubmittingTransaction
+                  }
                 />
                 {errors.accountNumber && (
                   <p className="text-red-500 text-sm mt-1">
@@ -203,14 +207,20 @@ console.log(transactionData);
           <button
             type="button"
             onClick={handleContinue}
-            disabled={isResolvingAccount}
+            disabled={
+              isResolvingAccount ||
+              isSubmittingTransaction ||
+              !control._formValues.accountName
+            }
             className={`w-full p-3 rounded mt-6 transition-colors ${
-              isResolvingAccount
+              isResolvingAccount ||
+              isSubmittingTransaction ||
+              !control._formValues.accountName
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-[#2467E3] text-white hover:bg-[#1e51b3]"
             }`}
           >
-            {isResolvingAccount ? "Processing..." : "Continue"}
+            {isSubmittingTransaction ? "Processing..." : "Continue"}
           </button>
         </div>
       </div>

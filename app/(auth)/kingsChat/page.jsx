@@ -1,10 +1,16 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Img from "@/assets/kings-call.svg";
 import Img2 from "@/assets/kings-chats.svg";
+import apiService from "@config/config";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
+// Icons
 const ChevronDownIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -57,62 +63,189 @@ const EyeOffIcon = () => (
   </svg>
 );
 
+// Form validation schema
+const loginSchema = z.object({
+  loginCredential: z.string().min(1, "This field is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
 const KingsChat = () => {
+  // Router for navigation
+  const router = useRouter();
+
+  // Form state using React Hook Form
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      loginCredential: "",
+      password: "",
+    },
+  });
+
+  // Component state
   const [showPassword, setShowPassword] = useState(false);
   const [loginMethod, setLoginMethod] = useState("phone");
-  const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
-    password: "",
-  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [countries, setCountries] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setError(""); // Clear error when user types
+  // Fetch countries on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const countriesList = await apiService.attributes.getCountries();
+        setCountries(countriesList);
+
+        // Set default country (Nigeria)
+        const nigeria = countriesList.find((country) => country.code === "NG");
+        setSelectedCountry(nigeria || countriesList[0]);
+      } catch (error) {
+        console.error("Failed to fetch countries:", error);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
+  // Handle login method change
+  const handleLoginMethodChange = (method) => {
+    setLoginMethod(method);
+    setValue("loginCredential", ""); // Clear the input field
+    setError("");
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // Handle country selection
+  const handleCountrySelect = (country) => {
+    setSelectedCountry(country);
+    setShowCountryDropdown(false);
+  };
+
+  // Format phone number (remove leading zero when country code is present)
+  const formatPhoneNumber = (phoneNumber) => {
+    if (!phoneNumber) return "";
+
+    // If the number starts with 0, remove it
+    if (phoneNumber.startsWith("0")) {
+      return phoneNumber.substring(1);
+    }
+    return phoneNumber;
+  };
+
+  // Handle form submission with fixes
+  const onSubmit = async (data) => {
     setIsLoading(true);
     setError("");
 
     try {
-      const response = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email: loginMethod === "email" ? formData.email : formData.phone,
-            password: formData.password,
-          }),
-        }
-      );
+      let payload;
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Store the API token
-        localStorage.setItem("kings_chat_token", data.api_token);
-
-        // Redirect to dashboard or home page
-        window.location.href = "/dashboard";
+      // Construct the payload based on login method
+      if (loginMethod === "phone") {
+        const formattedPhone = formatPhoneNumber(data.loginCredential);
+        // Make sure the dial code is defined and properly formatted
+        const dialCode = selectedCountry?.dial_code || "";
+        payload = {
+          phone_number: `${dialCode}${formattedPhone}`,
+          password: data.password,
+        };
       } else {
-        setError(
-          data.message || "Login failed. Please check your credentials."
-        );
+        // For email/username login
+        const isEmail = data.loginCredential.includes("@");
+        if (isEmail) {
+          payload = {
+            email: data.loginCredential,
+            password: data.password,
+          };
+        } else {
+          // Using the username login method
+          payload = {
+            kingschat_username: data.loginCredential,
+            password: data.password,
+          };
+        }
+      }
+
+      // Debug logging (development only)
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Login payload:", payload);
+      }
+
+      // For testing purposes - can use this mock response
+      if (process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true") {
+        // Mock successful response for testing
+        const mockResponse = {
+          status: 200,
+          success: true,
+          data: {
+            id: 12,
+            first_name: "Michale",
+            last_name: "Glover",
+            email: "francesco.gutmann@example.com",
+            phone_number: "+2348174639946",
+            gender: "Male",
+            kingschat_username: "nayeli.cummings",
+            created_at: "2024-11-19T07:20:03.000000Z",
+          },
+          api_token: "4|RGzT4oV4nWyg82ma5deF2XF1tiiyWUgxDWRKr7Nw02cb6361",
+        };
+
+        // Store the mock data
+        localStorage.setItem("token", mockResponse.api_token);
+        localStorage.setItem("user", JSON.stringify(mockResponse.data));
+
+        // Redirect to dashboard
+        router.push("/dashboard");
+        return;
+      }
+
+      // Call the API service
+      const response = await apiService.auth.login(payload);
+
+      // Handle successful login
+      if (response && response.api_token) {
+        // Store user data
+        localStorage.setItem("token", response.api_token);
+        localStorage.setItem("user", JSON.stringify(response.data));
+
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        setError("Login failed. Please check your credentials.");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      // Enhanced error handling
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Login error:", err);
+      }
+
+      if (err.status === 422) {
+        // Validation error
+        const fieldErrors = err.data?.error?.fields || {};
+        if (fieldErrors.email) {
+          setError(`Email issue: ${fieldErrors.email[0]}`);
+        } else if (fieldErrors.phone_number) {
+          setError(`Phone number issue: ${fieldErrors.phone_number[0]}`);
+        } else if (fieldErrors.kingschat_username) {
+          setError(`Username issue: ${fieldErrors.kingschat_username[0]}`);
+        } else {
+          setError("Please check your login details and try again.");
+        }
+      } else if (err.status === 401) {
+        setError("Invalid credentials. Please check your username/password.");
+      } else {
+        setError(
+          err.userFriendlyMessage ||
+            err.message ||
+            "An error occurred. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -149,77 +282,128 @@ const KingsChat = () => {
             <div className="mb-4">
               <div className="flex border-b">
                 <button
+                  type="button"
                   className={`pb-2 px-4 ${
                     loginMethod === "phone" ? "border-b-2 border-[#2F92E5]" : ""
                   }`}
-                  onClick={() => setLoginMethod("phone")}
+                  onClick={() => handleLoginMethodChange("phone")}
                 >
                   Phone
                 </button>
                 <button
+                  type="button"
                   className={`pb-2 px-4 ${
                     loginMethod === "email" ? "border-b-2 border-[#2F92E5]" : ""
                   }`}
-                  onClick={() => setLoginMethod("email")}
+                  onClick={() => handleLoginMethodChange("email")}
                 >
                   Username or email
                 </button>
               </div>
             </div>
-            <form onSubmit={handleLogin}>
+
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-4">
                 {loginMethod === "phone" ? (
                   <div className="flex items-center border border-[#ABB5FF] rounded-md">
-                    <div className="flex items-center px-3 border-r">
-                      <Image
-                        src="/flags/ng.svg"
-                        alt="Nigeria Flag"
-                        width={20}
-                        height={15}
-                      />
-                      <span className="ml-2">+234</span>
-                      <ChevronDownIcon />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowCountryDropdown(!showCountryDropdown)
+                        }
+                        className="flex items-center px-3 py-2 border-r"
+                      >
+                        {selectedCountry && (
+                          <>
+                            {selectedCountry.flag_url && (
+                              <img
+                                src={selectedCountry.flag_url}
+                                alt={selectedCountry.code}
+                                className="w-5 h-4 mr-2 object-cover"
+                              />
+                            )}
+                            <span className="mr-1">
+                              {selectedCountry.dial_code}
+                            </span>
+                            <ChevronDownIcon />
+                          </>
+                        )}
+                      </button>
+
+                      {showCountryDropdown && (
+                        <div className="absolute top-full left-0 z-10 mt-1 w-64 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {countries.map((country) => (
+                            <button
+                              key={country.id}
+                              type="button"
+                              className="flex items-center w-full px-4 py-2 text-left hover:bg-gray-100"
+                              onClick={() => handleCountrySelect(country)}
+                            >
+                              {country.flag_url && (
+                                <img
+                                  src={country.flag_url}
+                                  alt={country.code}
+                                  className="w-5 h-4 mr-2 object-cover"
+                                />
+                              )}
+                              <span className="truncate flex-grow">
+                                {country.name}
+                              </span>
+                              <span className="ml-auto text-gray-500 whitespace-nowrap">
+                                {country.dial_code}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <input
                       type="tel"
-                      name="phone"
                       placeholder="Your Number"
                       className="flex-grow p-2 outline-none"
-                      value={formData.phone}
-                      onChange={handleInputChange}
                       disabled={isLoading}
+                      {...register("loginCredential")}
                     />
                   </div>
                 ) : (
                   <input
                     type="text"
-                    name="email"
                     placeholder="Username or email"
                     className="w-full p-2 border border-[#ABB5FF] rounded-md"
-                    value={formData.email}
-                    onChange={handleInputChange}
                     disabled={isLoading}
+                    {...register("loginCredential")}
                   />
                 )}
+                {errors.loginCredential && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.loginCredential.message}
+                  </p>
+                )}
               </div>
+
               <div className="mb-6 relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  name="password"
                   placeholder="Password"
                   className="w-full p-2 border border-[#ABB5FF] rounded-md pr-10"
-                  value={formData.password}
-                  onChange={handleInputChange}
                   disabled={isLoading}
+                  {...register("password")}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2"
                 >
-                  {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
+                {errors.password && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
+
               <button
                 type="submit"
                 className="w-full bg-[#2F92E5] text-white p-2 rounded-md hover:bg-blue-300 transition-colors disabled:bg-blue-200"
@@ -228,6 +412,7 @@ const KingsChat = () => {
                 {isLoading ? "Logging in..." : "Login"}
               </button>
             </form>
+
             <div className="text-right mt-4">
               <Link
                 href="/forgot-password"
@@ -236,6 +421,7 @@ const KingsChat = () => {
                 Forgot your password?
               </Link>
             </div>
+
             <div className="mt-6">
               <p className="text-left text-[#2F92E5]">First-time User?</p>
               <Link
@@ -247,6 +433,7 @@ const KingsChat = () => {
             </div>
           </div>
         </div>
+
         <div className="mt-6 text-center text-sm text-gray-500">
           By using this service, you agree to our{" "}
           <Link href="/" className="text-[#2F92E5] underline">

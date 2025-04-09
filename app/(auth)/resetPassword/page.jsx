@@ -1,43 +1,51 @@
-'use client'
+"use client";
 import React, { useState } from "react";
 import bgImg from "@assets/forget-bgImg.svg";
 import Link from "next/link";
-import Image from "next/image";
-// import Img2 from "../assets/vector-img.svg";
+import { useRouter } from "next/navigation";
+// import { toast } from "react-hot-toast"; // Assuming you're using react-hot-toast for notifications
+import apiService from "@config/config";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
 
-  const handlePasswordReset = async () => {
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (!email.trim()) {
+      setErrorMessage("Please enter your email address");
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage("");
+
     try {
-      // Step 1: Request password reset code
-      const requestResetResponse = await fetch(
-        "https://cabinet.kingsswap.com.ng/api/v1/auth/password-reset/request",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
+      // Use the apiService to request password reset
+      const response = await apiService.auth.passwordResetRequest(email);
+
+      // Show success message using toast
+      toast.success(
+        response.message || "Password reset link sent successfully"
       );
-      const requestResetData = await requestResetResponse.json();
-      if (requestResetResponse.ok) {
-        console.log(requestResetData.message);
-        // Redirect the user to the reset confirmation page
-        window.location.href = "/resetConfirmation";
-      } else {
-        console.error(requestResetData.message);
-        // Display an error message to the user
-        alert(requestResetData.message);
-      }
+
+      // Redirect user to reset confirmation page
+      router.push("/resetConfirmation");
     } catch (error) {
-      console.error("Error resetting password:", error);
-      // Display a generic error message to the user
-      alert(
-        "An error occurred while resetting your password. Please try again later."
+      // Handle API error using the error format from your ApiError class
+      setErrorMessage(
+        error.userFriendlyMessage || "Failed to request password reset"
       );
+      toast.error(error.userFriendlyMessage || "Something went wrong");
+
+      // Log the error (won't show in production due to your logger implementation)
+      console.error("Password reset error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,41 +60,89 @@ const ResetPassword = () => {
           backgroundPosition: "center",
         }}
       >
-        {/* ... rest of the left section ... */}
+        {/* Left section content could go here */}
       </div>
 
       {/* Right section with form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
-          <h1 className="text-2xl font-semibold mb-8 text-gray-800">
-            Reset your password,
+          <h1 className="text-2xl font-semibold mb-2 text-gray-800">
+            Reset your password
           </h1>
-          <form>
+          <p className="text-gray-600 mb-8">
+            Enter your email address to receive a password reset link
+          </p>
+
+          <form onSubmit={handlePasswordReset}>
             <div className="mb-6">
-              <label className="block text-sm text-gray-600 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm text-gray-600 mb-2"
+              >
                 Email address
               </label>
               <div className="relative border border-gray-200 rounded-lg">
                 <input
+                  id="email"
                   type="email"
                   placeholder="Enter your email address"
-                  className="w-full px-4 py-3 rounded-lg focus:outline-none text-gray-700"
+                  className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  aria-invalid={errorMessage ? "true" : "false"}
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  {/* ... rest of the email input ... */}
-                </div>
               </div>
+              {errorMessage && (
+                <p className="text-red-500 text-sm mt-2">{errorMessage}</p>
+              )}
             </div>
+
             <button
-              type="button"
-              className="w-full bg-[#1D5EFF] text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              onClick={handlePasswordReset}
+              type="submit"
+              className={`w-full bg-[#1D5EFF] text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center ${
+                isLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
             >
-              Send password reset link
+              {isLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                "Send password reset link"
+              )}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <Link
+              href="/login"
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Return to login
+            </Link>
+          </div>
         </div>
       </div>
     </div>

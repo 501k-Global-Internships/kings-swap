@@ -10,6 +10,18 @@ const RATE_LIMIT_CONFIG = {
 };
 
 // Validation schemas
+const CountrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  flag_url: z.string().url(),
+});
+
+const CountriesResponseSchema = z.object({
+  status: z.number(),
+  success: z.boolean(),
+  data: z.array(CountrySchema),
+});
+
 const ApiConfigSchema = z.object({
   baseURL: z.string().url(),
   timeout: z.number().positive(),
@@ -41,7 +53,7 @@ const ApiConfigSchema = z.object({
 // API Configuration
 const API_CONFIG = {
   baseURL:
-    process.env.NEXT_PUBLIC_API_URL || "https://cabinet.kingsswap.com.ng",
+    process.env.NEXT_PUBLIC_API_URL || "https://dev.cabinet.kingsswap.com.ng",
   timeout: 30000,
   endpoints: {
     auth: {
@@ -76,7 +88,8 @@ class ApiError extends Error {
     data,
     retryable = false,
     errorCode = null,
-    originalError = null
+    originalError = null,
+    userFriendlyMessage = null
   ) {
     super(message);
     this.name = "ApiError";
@@ -86,6 +99,43 @@ class ApiError extends Error {
     this.timestamp = new Date().toISOString();
     this.errorCode = errorCode;
     this.originalError = originalError;
+    this.userFriendlyMessage =
+      userFriendlyMessage || this.getUserFriendlyMessage(status, errorCode);
+  }
+
+  getUserFriendlyMessage(status, errorCode) {
+    if (!navigator.onLine) {
+      return "Please check your internet connection and try again.";
+    }
+
+    // Common error types with friendly messages
+    const errorMessages = {
+      NO_INTERNET: "Please check your internet connection and try again.",
+      REQUEST_TIMEOUT:
+        "The server is taking too long to respond. Please try again later.",
+      NO_RESPONSE:
+        "We couldn't connect to our servers. Please check your connection or try again later.",
+      SERVER_401: "Your session has expired. Please log in again.",
+      SERVER_403: "You don't have permission to access this resource.",
+      SERVER_404: "The requested information could not be found.",
+      SERVER_429: "Too many requests. Please try again later.",
+      SERVER_500: "Something went wrong on our end. We're working to fix it.",
+      SERVER_502:
+        "Our service is temporarily unavailable. Please try again later.",
+      SERVER_503:
+        "Our service is temporarily unavailable. Please try again later.",
+      SERVER_504: "The server timed out. Please try again later.",
+      VALIDATION_ERROR: "We received unexpected data. Please try again later.",
+    };
+
+    return (
+      errorMessages[errorCode] ||
+      (status >= 500
+        ? "Something went wrong on our end. We're working to fix it."
+        : status >= 400
+        ? "We couldn't complete your request. Please try again."
+        : "An unexpected error occurred. Please try again later.")
+    );
   }
 
   static isRetryable(status) {
@@ -103,6 +153,7 @@ class ApiError extends Error {
         data: error.response.data,
         errorCode: `SERVER_${error.response.status}`,
         retryable: this.isRetryable(error.response.status),
+        userFriendlyMessage: error.response.data?.message || null,
       };
     }
 
@@ -115,6 +166,8 @@ class ApiError extends Error {
           data: null,
           errorCode: "REQUEST_TIMEOUT",
           retryable: true,
+          userFriendlyMessage:
+            "The server is taking too long to respond. Please try again later.",
         };
       }
 
@@ -125,6 +178,8 @@ class ApiError extends Error {
           data: null,
           errorCode: "NO_INTERNET",
           retryable: true,
+          userFriendlyMessage:
+            "Please check your internet connection and try again.",
         };
       }
 
@@ -134,6 +189,8 @@ class ApiError extends Error {
         data: null,
         errorCode: "NO_RESPONSE",
         retryable: true,
+        userFriendlyMessage:
+          "We couldn't connect to our servers. Please check your connection or try again later.",
       };
     }
 
@@ -144,6 +201,8 @@ class ApiError extends Error {
       data: null,
       errorCode: "REQUEST_SETUP_ERROR",
       retryable: false,
+      userFriendlyMessage:
+        "There was a problem with your request. Please try again.",
     };
   }
 }
@@ -158,9 +217,42 @@ class ApiService {
       this.token = this.getStoredToken();
       this.setupInterceptors();
       this.retryQueue = new Map();
+      this.networkListenerInitialized = false;
+      this.networkStatus = {
+        online: typeof navigator !== "undefined" ? navigator.onLine : true,
+        lastCheck: Date.now(),
+      };
+
+      // Initialize network status listeners
+      this.initNetworkListeners();
     } catch (error) {
       console.error("Invalid API configuration:", error);
       throw new Error("Invalid API configuration");
+    }
+  }
+
+  initNetworkListeners() {
+    if (typeof window !== "undefined" && !this.networkListenerInitialized) {
+      window.addEventListener("online", () => {
+        this.networkStatus.online = true;
+        this.networkStatus.lastCheck = Date.now();
+        this.processRetryQueue();
+      });
+
+      window.addEventListener("offline", () => {
+        this.networkStatus.online = false;
+        this.networkStatus.lastCheck = Date.now();
+      });
+
+      this.networkListenerInitialized = true;
+    }
+  }
+
+  processRetryQueue() {
+    // Process any pending requests when coming back online
+    if (this.retryQueue.size > 0 && this.networkStatus.online) {
+      // Implementation of retry queue processing
+      // This is a placeholder for a more robust implementation
     }
   }
 
@@ -183,7 +275,7 @@ class ApiService {
       const encryptedToken = localStorage.getItem("token");
       return encryptedToken ? this.decryptToken(encryptedToken) : null;
     } catch (error) {
-      console.error("Token retrieval failed:", error);
+      console.warn("Token retrieval failed:", error);
       return null;
     }
   }
@@ -201,7 +293,7 @@ class ApiService {
         this.token = null;
       }
     } catch (error) {
-      console.error("Token storage failed:", error);
+      console.warn("Token storage failed:", error);
       this.handleAuthError();
     }
   }
@@ -237,15 +329,17 @@ class ApiService {
       return Promise.reject(this.formatError(error));
     }
 
-    // Enhanced error logging
-    console.log("API Error:", {
-      url: originalRequest.url,
-      method: originalRequest.method,
-      status: error.response?.status,
-      errorCode: error.response?.data?.code,
-      message: error.message,
-      timestamp: new Date().toISOString(),
-    });
+    // Enhanced error logging - only log in development
+    if (process.env.NODE_ENV !== "production") {
+      console.log("API Error:", {
+        url: originalRequest.url,
+        method: originalRequest.method,
+        status: error.response?.status,
+        errorCode: error.response?.data?.code,
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     // Handle token expiration
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -268,23 +362,45 @@ class ApiService {
 
   // Add new method for error monitoring/reporting
   logError(error) {
+    // Only log details in development environment
+    if (process.env.NODE_ENV !== "production") {
+      console.log("API Error:", {
+        errorCode: error.errorCode,
+        status: error.status,
+        message: error.message,
+        timestamp: error.timestamp,
+        retryable: error.retryable,
+      });
+    }
+
     // In production, you might want to send this to your error monitoring service
-    console.log("API Error:", {
-      errorCode: error.errorCode,
-      status: error.status,
-      message: error.message,
-      timestamp: error.timestamp,
-      retryable: error.retryable,
-      originalError: error.originalError
-        ? {
-            message: error.originalError.message,
-            stack: error.originalError.stack,
-          }
-        : null,
-    });
+    // but without exposing technical details to end users
+    if (
+      process.env.NODE_ENV === "production" &&
+      typeof window !== "undefined"
+    ) {
+      // Example: send to error monitoring service
+      // errorMonitoringService.captureError(error);
+    }
   }
 
   async handleRequest(config) {
+    // Check network status before sending request
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      // Return early with a network error
+      return Promise.reject(
+        new ApiError(
+          "No internet connection",
+          -1,
+          null,
+          true,
+          "NO_INTERNET",
+          null,
+          "Please check your internet connection and try again."
+        )
+      );
+    }
+
     const token = this.token || this.getStoredToken();
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -293,8 +409,22 @@ class ApiService {
   }
 
   handleRequestError(error) {
-    console.error("Request Interceptor Error:", error);
-    return Promise.reject(new ApiError(error.message, 0, null));
+    // Don't expose internal errors to console in production
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Request Interceptor Error:", error);
+    }
+
+    return Promise.reject(
+      new ApiError(
+        error.message,
+        0,
+        null,
+        false,
+        "REQUEST_SETUP_ERROR",
+        error,
+        "There was a problem with your request. Please try again."
+      )
+    );
   }
 
   handleResponse(response) {
@@ -310,7 +440,17 @@ class ApiService {
       return this.axios(originalRequest);
     } catch (refreshError) {
       this.handleAuthError();
-      return Promise.reject(refreshError);
+      return Promise.reject(
+        new ApiError(
+          "Authentication failed",
+          401,
+          null,
+          false,
+          "AUTH_ERROR",
+          refreshError,
+          "Your session has expired. Please log in again."
+        )
+      );
     }
   }
 
@@ -335,7 +475,8 @@ class ApiService {
       errorDetails.data,
       errorDetails.retryable,
       errorDetails.errorCode,
-      error
+      error,
+      errorDetails.userFriendlyMessage
     );
   }
 
@@ -349,11 +490,29 @@ class ApiService {
 
   async makeRequest(requestConfig) {
     try {
+      // Check network status before making request
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new ApiError(
+          "No internet connection",
+          -1,
+          null,
+          true,
+          "NO_INTERNET",
+          null,
+          "Please check your internet connection and try again."
+        );
+      }
+
       const response = await this.axios(requestConfig);
       return response.data;
     } catch (error) {
-      const formattedError = this.formatError(error);
+      // Format the error with user-friendly message
+      const formattedError =
+        error instanceof ApiError ? error : this.formatError(error);
+
+      // Log the error (but not in production to user console)
       this.logError(formattedError);
+
       throw formattedError;
     }
   }
@@ -371,76 +530,83 @@ class ApiService {
   auth = {
     register: async (data) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.auth.register,
-          data
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.auth.register,
+          data,
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     login: async (credentials) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.auth.login,
-          credentials
-        );
-        if (response.data?.api_token) {
-          this.setToken(response.data.api_token);
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.auth.login,
+          data: credentials,
+        });
+
+        if (response?.api_token) {
+          this.setToken(response.api_token);
         }
-        return response.data;
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     verifyEmail: async (data) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.auth.verifyEmail,
-          data
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.auth.verifyEmail,
+          data,
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     requestVerification: async (email) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.auth.requestVerification,
-          { email }
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.auth.requestVerification,
+          data: { email },
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     passwordResetRequest: async (email) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.auth.passwordResetRequest,
-          { email }
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.auth.passwordResetRequest,
+          data: { email },
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     passwordResetVerify: async (data) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.auth.passwordResetVerify,
-          data
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.auth.passwordResetVerify,
+          data,
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
   };
@@ -449,62 +615,86 @@ class ApiService {
   attributes = {
     getCountries: async () => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.attributes.countries
-        );
-        return response.data.data;
+        const response = await this.makeRequest({
+          method: "GET",
+          url: this.config.endpoints.attributes.countries,
+        });
+
+        // Validate the response against our schema
+        try {
+          const validatedResponse = CountriesResponseSchema.parse(response);
+          return validatedResponse.data;
+        } catch (validationError) {
+          // Handle validation errors
+          if (process.env.NODE_ENV !== "production") {
+            console.error(
+              "Invalid countries response format:",
+              validationError.errors
+            );
+          }
+
+          throw new ApiError(
+            "Invalid response format",
+            500,
+            validationError.errors,
+            false,
+            "VALIDATION_ERROR",
+            validationError,
+            "We received unexpected data from the server. Please try again later."
+          );
+        }
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     getBanks: async (currency) => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.attributes.banks,
-          {
-            params: {
-              currency: currency,
-            },
-          }
-        );
-        return response.data?.data.banks || [];
+        const response = await this.makeRequest({
+          method: "GET",
+          url: this.config.endpoints.attributes.banks,
+          params: { currency },
+        });
+        return response?.data.banks || [];
       } catch (error) {
-        throw new Error(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     getRates: async () => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.attributes.rates
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "GET",
+          url: this.config.endpoints.attributes.rates,
+        });
+        return response;
       } catch (error) {
-        throw new Error(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     getCurrencies: async () => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.attributes.currencies
-        );
-        return response.data.data;
+        const response = await this.makeRequest({
+          method: "GET",
+          url: this.config.endpoints.attributes.currencies,
+        });
+        return response.data;
       } catch (error) {
-        throw new Error(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     resolveAccount: async (bankId, accountNumber) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.attributes.resolveAccount,
-          { bank_id: bankId, account_number: accountNumber }
-        );
-        return response.data.data;
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.attributes.resolveAccount,
+          data: { bank_id: bankId, account_number: accountNumber },
+        });
+        return response.data;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
   };
@@ -513,53 +703,60 @@ class ApiService {
   transactions = {
     create: async (data) => {
       try {
-        const response = await this.axios.post(
-          this.config.endpoints.transactions.create,
-          {
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.transactions.create,
+          data: {
             espee_amount: data.espee_amount,
             destination_currency: data.destination_currency,
             bank_account: {
               bank_id: data.bank_account.bank_id,
               account_number: data.bank_account.account_number,
             },
-          }
-        );
-        return response.data;
+          },
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     list: async (currency) => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.transactions.list,
-          {
-            params: {
-              currency: currency,
-            },
-          }
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "GET",
+          url: this.config.endpoints.transactions.list,
+          params: { currency },
+        });
+        return response;
       } catch (error) {
-        throw new Error(error);
+        throw error; // Already formatted by makeRequest
       }
     },
 
     getDetails: async (id) => {
       try {
-        const response = await this.axios.get(
-          this.config.endpoints.transactions.details.replace(":id", id)
-        );
-        return response.data;
+        const response = await this.makeRequest({
+          method: "GET",
+          url: this.config.endpoints.transactions.details.replace(":id", id),
+        });
+        return response;
       } catch (error) {
-        throw this.formatError(error);
+        throw error; // Already formatted by makeRequest
       }
     },
   };
+
+  // Method to refresh authentication token
+  async refreshToken() {
+    // Implement your token refresh logic here
+    // This is a placeholder
+    throw new Error("Token refresh not implemented");
+  }
 }
+
 // Create API service instance
 const apiService = new ApiService(API_CONFIG);
 
 export default apiService;
-export { API_CONFIG, ApiError };
+export { API_CONFIG, ApiError, CountrySchema, CountriesResponseSchema };

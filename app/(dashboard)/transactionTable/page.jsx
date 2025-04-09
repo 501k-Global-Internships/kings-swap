@@ -1,68 +1,104 @@
 "use client";
 
-import { useExchange } from "@hooks/useExchange";
+import apiService from "@config/config";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import React from "react";
 
-const TransactionTable = () => {
-  // const { loading, error, transactions, fetchTransactions } = useExchange();
+const TableHeader = () => (
+  <div className="flex items-center p-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-500 bg-gray-50">
+    <div className="flex-1">Date</div>
+    <div className="flex-1">Amount</div>
+    <div className="flex-1">Description</div>
+    <div className="flex-1">Status</div>
+  </div>
+);
 
-  // React.useEffect(() => {
-  //   fetchTransactions();
-  // }, [fetchTransactions]);
+const TransactionRow = ({ transaction }) => {
+  if (!transaction) return null;
 
-  const {
-    data: transactions,
-    isFetching: loading,
-    isPending,
-    error,
-  } = useQuery({
-    queryKey: ["fetch/transaction"],
-    queryFn: () => apiService.transaction.list("NGN"),
-    placeholderData: keepPreviousData,
+  const date = new Date(transaction.created_at).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
   });
 
-  const getStatusBadgeStyle = (status) => {
-    const baseStyle = "px-3 py-1 rounded-full text-sm font-medium";
+  const amount = transaction.total_espee_amount
+    ? `₦ ${parseFloat(transaction.total_espee_amount).toLocaleString()}`
+    : "N/A";
 
-    switch (status?.toLowerCase()) {
+  const getStatusColor = (status) => {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
       case "completed":
-        return `${baseStyle} bg-green-100 text-green-800`;
+      case "success":
+        return "text-green-500";
       case "failed":
-        return `${baseStyle} bg-red-100 text-red-800`;
+        return "text-red-500";
       case "processing":
-        return `${baseStyle} bg-yellow-100 text-yellow-800`;
+        return "text-yellow-500";
       case "pending":
-        return `${baseStyle} bg-blue-100 text-blue-800`;
+        return "text-blue-500";
       default:
-        return `${baseStyle} bg-gray-100 text-gray-800`;
+        return "text-gray-500";
     }
   };
 
-  const formatAmount = (amount, currency = "₦") => {
-    if (amount == null) return "N/A";
-    return `${currency} ${amount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+  const status = transaction.processing_status || "Unknown";
+  const statusColor = getStatusColor(status);
+  const description =
+    transaction.description ||
+    (transaction.payment_method
+      ? `Paid through ${transaction.payment_method}`
+      : "Currency Exchange");
+
+  return (
+    <div className="flex items-center py-3 px-1 text-sm border-b hover:bg-gray-50 transition-colors duration-200">
+      <div className="flex-1">{date}</div>
+      <div className="flex-1">{amount}</div>
+      <div className="flex-1">{description}</div>
+      <div className={`flex-1 ${statusColor}`}>
+        {status.toLowerCase() === "completed" ? "success" : status}
+      </div>
+    </div>
+  );
+};
+
+const TransactionTable = () => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  const {
+    data: response,
+    isFetching,
+    isPending,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["fetch/transactions", currentPage],
+    queryFn: () => apiService.transactions.list("NGN", currentPage),
+    placeholderData: keepPreviousData,
+  });
+
+  const transactions = response?.data || [];
+
+  // Extract pagination information from response
+  const pagination = response?.pagination || {
+    count: 0,
+    total: 0,
+    perPage: 15,
+    currentPage: 1,
+    totalPages: 1,
+    links: {},
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const hasNextPage = !!pagination.links?.next;
+  const hasPrevPage = currentPage > 1;
 
-  if (loading) {
+  if (isFetching && isPending) {
     return (
-      <div className="w-full p-8 flex justify-center items-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-600">Loading transactions...</p>
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="flex items-center justify-center space-x-2">
+          <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+          <span className="text-gray-600">Loading transactions...</span>
         </div>
       </div>
     );
@@ -70,101 +106,81 @@ const TransactionTable = () => {
 
   if (error) {
     return (
-      <div className="w-full p-6 bg-red-50 border border-red-200 rounded-lg">
-        <div className="flex items-center space-x-3">
-          <svg
-            className="w-6 h-6 text-red-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          {/* <p className="text-red-700">Failed to load transactions: {error}</p> */}
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="text-red-500 text-center">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p>Failed to load transactions</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!transactions || transactions.length === 0) {
-    return (
-      <div className="w-full p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex flex-col items-center space-y-2">
-          <svg
-            className="w-12 h-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <p className="text-gray-600">No transactions found</p>
-        </div>
-      </div>
-    );
-  }
+  const validTransactions = Array.isArray(transactions) ? transactions : [];
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200">
-      <table className="w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Amount
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Currency
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Reference
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {transactions.map((transaction) => (
-            <tr
-              key={transaction.id}
-              className="hover:bg-gray-50 transition-colors duration-200"
-            >
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {formatDate(transaction.created_at)}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {formatAmount(transaction.total_espee_amount)}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {transaction.destination_currency}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={getStatusBadgeStyle(transaction.processing_status)}
-                >
-                  {transaction.processing_status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {transaction.reference || "N/A"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="bg-white rounded-lg p-6 shadow-sm">
+      <TableHeader />
+      <div>
+        {validTransactions.length > 0 ? (
+          validTransactions.map((transaction, index) => (
+            <TransactionRow
+              key={transaction.id || index}
+              transaction={transaction}
+            />
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No transactions found</p>
+          </div>
+        )}
+      </div>
+
+      {pagination.totalPages > 1 && (
+        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+          <button
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+            disabled={!hasPrevPage}
+            className={`px-4 py-2 text-sm rounded-md ${
+              !hasPrevPage
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+            }`}
+          >
+            Previous
+          </button>
+          <div className="text-sm text-gray-500">
+            <span>
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <span className="ml-2">({pagination.total} transactions)</span>
+          </div>
+          <button
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+            disabled={!hasNextPage}
+            className={`px-4 py-2 text-sm rounded-md ${
+              !hasNextPage
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };
