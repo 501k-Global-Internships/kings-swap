@@ -5,6 +5,7 @@ import Copy from "@assets/copy.svg";
 import Close from "@assets/close-circle.svg";
 import { useExchangeContext } from "./ExchangeContext";
 import apiService from "@config/config";
+import toast from "react-hot-toast"; // Import toast
 
 export function TransactionInProgressStep() {
   const { setStep, transactionData, setTransactionData, resetTransaction } =
@@ -82,6 +83,8 @@ export function TransactionInProgressStep() {
         }
       }
     } catch (error) {
+      // Show toast for error
+      toast.error("Failed to check transaction status");
       console.error("Failed to check transaction status:", error);
     }
   };
@@ -91,16 +94,33 @@ export function TransactionInProgressStep() {
   };
 
   const handleCancel = async () => {
+    if (!transactionData.id) {
+      toast.error("No transaction ID available to cancel");
+      return;
+    }
+
     setIsCancelling(true);
+
     try {
-      if (transactionData.id) {
-        // Call API to cancel transaction
-        await apiService.transactions.cancel(transactionData.id);
-      }
+      // Call API to cancel transaction using the new cancel endpoint
+      await apiService.transactions.cancel(transactionData.id);
+
+      // Show success toast
+      toast.success("Transaction cancelled successfully");
+
+      // Reset transaction and go back to first step
       resetTransaction();
-      setStep(1); // Return to first step
+      setStep(1);
     } catch (error) {
       console.error("Failed to cancel transaction:", error);
+
+      // Show error toast with backend message if available
+      const errorMessage =
+        error?.data?.message ||
+        error?.data?.error?.message ||
+        "Failed to cancel transaction. Please try again.";
+
+      toast.error(errorMessage);
     } finally {
       setIsCancelling(false);
     }
@@ -119,6 +139,9 @@ export function TransactionInProgressStep() {
     navigator.clipboard.writeText(text);
     setCopied({ ...copied, [type]: true });
     setTimeout(() => setCopied({ ...copied, [type]: false }), 2000);
+
+    // Add toast notification
+    toast.success("Copied to clipboard!");
   };
 
   return (
@@ -266,3 +289,5 @@ export function TransactionInProgressStep() {
     </div>
   );
 }
+
+export default TransactionInProgressStep;

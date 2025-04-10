@@ -3,7 +3,13 @@ import { Suspense } from "react";
 
 // Create a wrapper component for the main content
 const ResetConfirmationWrapper = () => (
-  <Suspense fallback={<div>Loading...</div>}>
+  <Suspense
+    fallback={
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      </div>
+    }
+  >
     <ResetConfirmationContent />
   </Suspense>
 );
@@ -13,62 +19,28 @@ import bgImage from "@assets/password-bg.svg";
 import Link from "next/link";
 import Img2 from "@assets/vector-img.svg";
 import Image from "next/image";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 const ResetConfirmationContent = () => {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const email = searchParams?.get("email");
-  const code = searchParams?.get("code");
-  const [isPasswordReset, setIsPasswordReset] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(true);
+
 
   useEffect(() => {
-    const verifyPasswordReset = async () => {
-      if (!email || !code) {
-        setErrorMessage("Missing email or verification code");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const verifyResetResponse = await fetch(
-          "https://cabinet.kingsswap.com.ng/api/v1/auth/password-reset/verify",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({
-              email,
-              code,
-            }),
-          }
-        );
-
-        const verifyResetData = await verifyResetResponse.json();
-
-        if (verifyResetResponse.ok) {
-          setIsPasswordReset(true);
-        } else {
-          setErrorMessage(
-            verifyResetData.message || "Password reset verification failed"
-          );
-        }
-      } catch (error) {
-        console.error("Error verifying password reset:", error);
-        setErrorMessage(
-          "An error occurred while verifying the password reset. Please try again later."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifyPasswordReset();
-  }, [email, code]);
+    if (!email) {
+      setMessage("Missing email address. Please try again.");
+      setIsSuccess(false);
+    } else {
+      setMessage(
+        "Password reset link has been sent to your email. Please check your inbox and spam folders."
+      );
+      setIsSuccess(true);
+    }
+    setIsLoading(false);
+  }, [email]);
 
   if (isLoading) {
     return (
@@ -116,16 +88,13 @@ const ResetConfirmationContent = () => {
           <h1 className="text-2xl font-semibold text-gray-800 mb-8">
             Reset your password
           </h1>
-          {isPasswordReset ? (
-            <div className="mb-6 bg-[#37BE1C] text-white py-4 px-4 rounded-lg text-center">
-              Password changed successfully!
-            </div>
-          ) : (
-            <div className="mb-6 bg-[#FF0000] text-white py-4 px-4 rounded-lg text-center">
-              {errorMessage ||
-                "An error occurred while resetting your password."}
-            </div>
-          )}
+          <div
+            className={`mb-6 ${
+              isSuccess ? "bg-[#37BE1C]" : "bg-[#FF0000]"
+            } text-white py-4 px-4 rounded-lg text-center`}
+          >
+            {message}
+          </div>
           <Link
             href="/loginPage"
             className="block w-full border border-gray-200 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-center transition-colors"
@@ -140,5 +109,4 @@ const ResetConfirmationContent = () => {
 
 export default ResetConfirmationWrapper;
 
-// Add dynamic config
 export const dynamic = "force-dynamic";

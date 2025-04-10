@@ -66,6 +66,17 @@ export function ExchangeProvider({ children }) {
       setError(error?.message || "Transaction creation failed"),
   });
 
+  // Add cancel transaction mutation
+  const { mutate: cancelTransaction } = useMutation({
+    mutationFn: (id) => apiService.transactions.cancel(id),
+    onSuccess: () => {
+      resetTransaction();
+      setStep(1); // Return to first step
+    },
+    onError: (error) =>
+      setError(error?.message || "Transaction cancellation failed"),
+  });
+
   // Add getTransactions query
   const {
     data: transactions,
@@ -138,10 +149,10 @@ export function ExchangeProvider({ children }) {
       setError,
       calculateExchangeAmount,
       createTransaction,
+      cancelTransaction, // Add cancel transaction function
       transactionData,
       setTransactionData,
       resetTransaction,
-      // Add new transaction-related functions
       transactions: transactions?.data || [],
       paginationData: transactions?.pagination || {},
       getTransactions: refetchTransactions,
@@ -158,8 +169,8 @@ export function ExchangeProvider({ children }) {
       error,
       calculateExchangeAmount,
       createTransaction,
+      cancelTransaction, // Add dependency
       transactionData,
-      // Add dependencies for new additions
       transactions,
       refetchTransactions,
       isLoadingTransactions,

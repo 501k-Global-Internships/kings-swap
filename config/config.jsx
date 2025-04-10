@@ -75,6 +75,7 @@ const API_CONFIG = {
       create: "/api/v1/transactions",
       list: "/api/v1/transactions",
       details: "/api/v1/transactions/:id",
+      cancel: "/api/v1/transactions/:id/cancel",
     },
     preflight: "/ping",
   },
@@ -469,6 +470,13 @@ class ApiService {
   formatError(error) {
     const errorDetails = ApiError.getErrorDetails(error);
 
+    // Enhanced error message extraction from the response
+    const userFriendlyMessage =
+      errorDetails.data?.message ||
+      errorDetails.data?.error?.message ||
+      errorDetails.userFriendlyMessage ||
+      "An unexpected error occurred";
+
     return new ApiError(
       errorDetails.message,
       errorDetails.status,
@@ -476,7 +484,7 @@ class ApiService {
       errorDetails.retryable,
       errorDetails.errorCode,
       error,
-      errorDetails.userFriendlyMessage
+      userFriendlyMessage
     );
   }
 
@@ -739,6 +747,31 @@ class ApiService {
         const response = await this.makeRequest({
           method: "GET",
           url: this.config.endpoints.transactions.details.replace(":id", id),
+        });
+        return response;
+      } catch (error) {
+        throw error; // Already formatted by makeRequest
+      }
+    },
+
+    // Add the cancel method
+    cancel: async (id) => {
+      try {
+        if (!id) {
+          throw new ApiError(
+            "Transaction ID is required",
+            400,
+            null,
+            false,
+            "VALIDATION_ERROR",
+            null,
+            "Transaction ID is required to cancel a transaction"
+          );
+        }
+
+        const response = await this.makeRequest({
+          method: "POST",
+          url: this.config.endpoints.transactions.cancel.replace(":id", id),
         });
         return response;
       } catch (error) {

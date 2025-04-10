@@ -19,6 +19,7 @@ import bgImage from "@assets/password-bg.svg";
 import Img2 from "@assets/vector-img.svg";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "react-hot-toast"; // Add this import
 
 const NewPasswordContent = () => {
   const router = useRouter();
@@ -99,15 +100,22 @@ const NewPasswordContent = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Password reset successful! Redirecting to login...");
+        // Show success message from API response
+        setSuccessMessage(data.message || "Password reset successful!");
+        toast.success(data.message || "Password reset successful!");
+
         setTimeout(() => {
           router.push("/login");
         }, 1500);
       } else {
         setError(data.message || "Failed to reset password. Please try again.");
+        toast.error(
+          data.message || "Failed to reset password. Please try again."
+        );
       }
     } catch (err) {
       setError("An error occurred. Please try again later.");
+      toast.error("An error occurred. Please try again later.");
     } finally {
       setLoading(false);
     }

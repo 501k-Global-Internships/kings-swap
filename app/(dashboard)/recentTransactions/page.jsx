@@ -4,6 +4,9 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import React from "react";
 import { useRouter } from "next/navigation";
 
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import Pagination from "../paginationComponent/Pagination";
+
 const TableHeader = () => (
   <div className="flex items-center p-3 mb-4 border border-gray-200 rounded-lg text-sm font-medium text-gray-500 bg-gray-50">
     <div className="flex-1">Date</div>
@@ -63,8 +66,10 @@ const TransactionRow = ({ transaction }) => {
   );
 };
 
+// Main component that wraps both table and pagination
 const TransactionsTable = () => {
-  const limit = 5; // Limit to recent transactions only
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage, setItemsPerPage] = React.useState(5); // Configurable items per page
 
   const {
     data: response,
@@ -73,14 +78,37 @@ const TransactionsTable = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["fetch/recent-transactions"],
-    queryFn: () => apiService.transactions.list("NGN", 1, limit),
+    queryKey: ["fetch/recent-transactions", currentPage, itemsPerPage],
+    queryFn: () =>
+      apiService.transactions.list("NGN", currentPage, itemsPerPage),
     placeholderData: keepPreviousData,
     refetchInterval: 30000, // Auto refresh every 30 seconds
   });
 
   const transactions = response?.data || [];
 
+  // Extract pagination information from response
+  const pagination = response?.pagination || {
+    count: 0,
+    total: 0,
+    perPage: 5,
+    currentPage: 1,
+    totalPages: 1,
+    links: {},
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll to top of table when page changes
+    window.scrollTo({
+      top:
+        document.getElementById("recent-transactions-table-top")?.offsetTop ||
+        0,
+      behavior: "smooth",
+    });
+  };
+
+  // Show loading state
   if (isFetching && isPending) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -92,6 +120,7 @@ const TransactionsTable = () => {
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -120,23 +149,40 @@ const TransactionsTable = () => {
   const validTransactions = Array.isArray(transactions) ? transactions : [];
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold">Recent Transactions</h2>
-      <TableHeader />
-      <div>
-        {validTransactions.length > 0 ? (
-          validTransactions.map((transaction, index) => (
-            <TransactionRow
-              key={transaction.id || index}
-              transaction={transaction}
-            />
-          ))
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No transactions found</p>
-          </div>
-        )}
+    <div>
+      {/* Recent Transactions Table Component */}
+      <div
+        id="recent-transactions-table-top"
+        className="bg-white rounded-2xl p-6 shadow-sm"
+      >
+        <h2 className="text-lg font-semibold">Recent Transactions</h2>
+        <TableHeader />
+        <div>
+          {validTransactions.length > 0 ? (
+            validTransactions.map((transaction, index) => (
+              <TransactionRow
+                key={transaction.id || index}
+                transaction={transaction}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No transactions found</p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Pagination Component placed outside the table div */}
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.total}
+        onPageChange={handlePageChange}
+        showItemCount={true}
+        maxPageButtons={5}
+        className="mt-6" 
+      />
     </div>
   );
 };

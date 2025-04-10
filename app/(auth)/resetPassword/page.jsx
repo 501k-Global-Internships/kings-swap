@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import bgImg from "@assets/forget-bgImg.svg";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-// import { toast } from "react-hot-toast"; // Assuming you're using react-hot-toast for notifications
+import { toast } from "react-hot-toast"; // Uncomment this since it's referenced in the code
 import apiService from "@config/config";
 
 const ResetPassword = () => {
@@ -25,24 +25,21 @@ const ResetPassword = () => {
     setErrorMessage("");
 
     try {
-      // Use the apiService to request password reset
+      // Direct API call matching the documentation
       const response = await apiService.auth.passwordResetRequest(email);
 
-      // Show success message using toast
-      toast.success(
-        response.message || "Password reset link sent successfully"
-      );
+      // Display success message from API
+      toast.success(response.message);
 
-      // Redirect user to reset confirmation page
-      router.push("/resetConfirmation");
+      // Redirect to a confirmation page
+      router.push(`/resetConfirmation?email=${encodeURIComponent(email)}`);
     } catch (error) {
-      // Handle API error using the error format from your ApiError class
-      setErrorMessage(
-        error.userFriendlyMessage || "Failed to request password reset"
-      );
-      toast.error(error.userFriendlyMessage || "Something went wrong");
+    
+      const message =
+        error.userFriendlyMessage || "Failed to request password reset";
+      setErrorMessage(message);
+      toast.error(message);
 
-      // Log the error (won't show in production due to your logger implementation)
       console.error("Password reset error:", error);
     } finally {
       setIsLoading(false);
@@ -137,7 +134,7 @@ const ResetPassword = () => {
 
           <div className="mt-6 text-center">
             <Link
-              href="/login"
+              href="/loginPage"
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
               Return to login

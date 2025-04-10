@@ -4,6 +4,9 @@ import apiService from "@config/config";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import React from "react";
 
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import Pagination from "../paginationComponent/Pagination";
+
 const TableHeader = () => (
   <div className="flex items-center p-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-500 bg-gray-50">
     <div className="flex-1">Date</div>
@@ -63,6 +66,7 @@ const TransactionRow = ({ transaction }) => {
   );
 };
 
+// Main component that wraps both table and pagination
 const TransactionTable = () => {
   const [currentPage, setCurrentPage] = React.useState(1);
 
@@ -90,9 +94,16 @@ const TransactionTable = () => {
     links: {},
   };
 
-  const hasNextPage = !!pagination.links?.next;
-  const hasPrevPage = currentPage > 1;
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll to top of table when page changes
+    window.scrollTo({
+      top: document.getElementById("transactions-table-top")?.offsetTop || 0,
+      behavior: "smooth",
+    });
+  };
 
+  // Show loading state
   if (isFetching && isPending) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -104,6 +115,7 @@ const TransactionTable = () => {
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -132,55 +144,38 @@ const TransactionTable = () => {
   const validTransactions = Array.isArray(transactions) ? transactions : [];
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <TableHeader />
-      <div>
-        {validTransactions.length > 0 ? (
-          validTransactions.map((transaction, index) => (
-            <TransactionRow
-              key={transaction.id || index}
-              transaction={transaction}
-            />
-          ))
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No transactions found</p>
-          </div>
-        )}
+    <div>
+      {/* Transaction Table Component */}
+      <div
+        id="transactions-table-top"
+        className="bg-white rounded-lg p-6 shadow-sm"
+      >
+        <h2 className="text-lg font-semibold mb-4">Transactions</h2>
+        <TableHeader />
+        <div>
+          {validTransactions.length > 0 ? (
+            validTransactions.map((transaction, index) => (
+              <TransactionRow
+                key={transaction.id || index}
+                transaction={transaction}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No transactions found</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {pagination.totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 pt-4 border-t">
-          <button
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-            disabled={!hasPrevPage}
-            className={`px-4 py-2 text-sm rounded-md ${
-              !hasPrevPage
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-            }`}
-          >
-            Previous
-          </button>
-          <div className="text-sm text-gray-500">
-            <span>
-              Page {pagination.currentPage} of {pagination.totalPages}
-            </span>
-            <span className="ml-2">({pagination.total} transactions)</span>
-          </div>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!hasNextPage}
-            className={`px-4 py-2 text-sm rounded-md ${
-              !hasNextPage
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      )}
+      {/* Pagination Component placed outside the table div */}
+      <Pagination
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.total}
+        onPageChange={handlePageChange}
+        className="mt-6" 
+      />
     </div>
   );
 };
