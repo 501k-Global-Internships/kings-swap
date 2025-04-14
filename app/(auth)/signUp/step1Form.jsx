@@ -1,12 +1,22 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
 
-const Step1Form = ({ onNext, countries, isLoading }) => {
+const Step1Form = ({ onNext, countries, isLoading, initialCountry = "NG" }) => {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
+
+  // Set the selected country based on the initialCountry prop
+  useEffect(() => {
+    if (countries?.length && initialCountry) {
+      const country = countries.find((c) => c.id === initialCountry);
+      if (country) {
+        setSelectedCountry(country);
+      }
+    }
+  }, [countries, initialCountry]);
 
   const handleContinue = () => {
     if (!selectedCountry) {

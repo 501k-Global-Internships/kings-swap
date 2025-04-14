@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { z } from "zod";
+import toast from "react-hot-toast"; // Import toast library (you'll need to install this)
 
 const RATE_LIMIT_CONFIG = {
   maxRetries: 3,
@@ -16,11 +17,13 @@ const CountrySchema = z.object({
   flag_url: z.string().url(),
 });
 
+
 const CountriesResponseSchema = z.object({
   status: z.number(),
   success: z.boolean(),
   data: z.array(CountrySchema),
-});
+}); 
+
 
 const ApiConfigSchema = z.object({
   baseURL: z.string().url(),
@@ -78,6 +81,21 @@ const API_CONFIG = {
       cancel: "/api/v1/transactions/:id/cancel",
     },
     preflight: "/ping",
+  },
+};
+
+// Create a Toast service for displaying errors
+const ToastService = {
+  showError: (message) => {
+    if (typeof window !== "undefined") {
+      toast.error(message || "An unexpected error occurred");
+    }
+  },
+
+  showSuccess: (message) => {
+    if (typeof window !== "undefined") {
+      toast.success(message);
+    }
   },
 };
 
@@ -243,6 +261,10 @@ class ApiService {
       window.addEventListener("offline", () => {
         this.networkStatus.online = false;
         this.networkStatus.lastCheck = Date.now();
+        // Show a toast when the network goes offline
+        ToastService.showError(
+          "You are currently offline. Please check your internet connection."
+        );
       });
 
       this.networkListenerInitialized = true;
@@ -327,7 +349,10 @@ class ApiService {
     const originalRequest = error.config;
 
     if (!originalRequest) {
-      return Promise.reject(this.formatError(error));
+      const formattedError = this.formatError(error);
+      // Display toast with user-friendly error message
+      ToastService.showError(formattedError.userFriendlyMessage);
+      return Promise.reject(formattedError);
     }
 
     // Enhanced error logging - only log in development
@@ -348,6 +373,16 @@ class ApiService {
     }
 
     const formattedError = this.formatError(error);
+
+    // Display toast with user-friendly error message for non-retryable errors
+    // or if we've exhausted retry attempts
+    if (
+      !formattedError.retryable ||
+      (originalRequest._retryCount &&
+        originalRequest._retryCount >= RATE_LIMIT_CONFIG.maxRetries)
+    ) {
+      ToastService.showError(formattedError.userFriendlyMessage);
+    }
 
     // Handle retryable errors
     if (
@@ -388,7 +423,7 @@ class ApiService {
   async handleRequest(config) {
     // Check network status before sending request
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      // Return early with a network error
+      // Instead of throwing an error, return a rejected promise with an ApiError
       return Promise.reject(
         new ApiError(
           "No internet connection",
@@ -415,17 +450,20 @@ class ApiService {
       console.warn("Request Interceptor Error:", error);
     }
 
-    return Promise.reject(
-      new ApiError(
-        error.message,
-        0,
-        null,
-        false,
-        "REQUEST_SETUP_ERROR",
-        error,
-        "There was a problem with your request. Please try again."
-      )
+    const apiError = new ApiError(
+      error.message,
+      0,
+      null,
+      false,
+      "REQUEST_SETUP_ERROR",
+      error,
+      "There was a problem with your request. Please try again."
     );
+
+    // Display toast for request setup errors
+    ToastService.showError(apiError.userFriendlyMessage);
+
+    return Promise.reject(apiError);
   }
 
   handleResponse(response) {
@@ -441,17 +479,21 @@ class ApiService {
       return this.axios(originalRequest);
     } catch (refreshError) {
       this.handleAuthError();
-      return Promise.reject(
-        new ApiError(
-          "Authentication failed",
-          401,
-          null,
-          false,
-          "AUTH_ERROR",
-          refreshError,
-          "Your session has expired. Please log in again."
-        )
+
+      const authError = new ApiError(
+        "Authentication failed",
+        401,
+        null,
+        false,
+        "AUTH_ERROR",
+        refreshError,
+        "Your session has expired. Please log in again."
       );
+
+      // Display toast for auth errors
+      ToastService.showError(authError.userFriendlyMessage);
+
+      return Promise.reject(authError);
     }
   }
 
@@ -462,6 +504,13 @@ class ApiService {
         Math.pow(2, originalRequest._retryCount - 1),
       RATE_LIMIT_CONFIG.maxDelay
     );
+
+    // If it's the first retry, show a toast that we're retrying
+    if (originalRequest._retryCount === 1) {
+      ToastService.showError(
+        `Connection issue. Retrying... (Attempt 1/${RATE_LIMIT_CONFIG.maxRetries})`
+      );
+    }
 
     await new Promise((resolve) => setTimeout(resolve, delay));
     return this.axios(originalRequest);
@@ -491,8 +540,13 @@ class ApiService {
   handleAuthError() {
     this.setToken(null);
     if (typeof window !== "undefined") {
+      // Show toast before redirecting
+      ToastService.showError("Your session has expired. Please log in again.");
+
       // Use a more robust navigation solution in production
-      window.location.href = "/loginPage";
+      setTimeout(() => {
+        window.location.href = "/loginPage";
+      }, 1500); // Give time for the toast to be seen
     }
   }
 
@@ -500,7 +554,8 @@ class ApiService {
     try {
       // Check network status before making request
       if (typeof navigator !== "undefined" && !navigator.onLine) {
-        throw new ApiError(
+        // Instead of throwing directly, we'll create an error and show a toast
+        const offlineError = new ApiError(
           "No internet connection",
           -1,
           null,
@@ -509,6 +564,12 @@ class ApiService {
           null,
           "Please check your internet connection and try again."
         );
+
+        // Show toast for offline error
+        ToastService.showError(offlineError.userFriendlyMessage);
+
+        // Return a rejected promise instead of throwing
+        return Promise.reject(offlineError);
       }
 
       const response = await this.axios(requestConfig);
@@ -520,6 +581,12 @@ class ApiService {
 
       // Log the error (but not in production to user console)
       this.logError(formattedError);
+
+      // Make sure we show a toast for any errors that reach this point
+      // that weren't handled by interceptors
+      if (!error.config || !error.config._retry) {
+        ToastService.showError(formattedError.userFriendlyMessage);
+      }
 
       throw formattedError;
     }
@@ -543,9 +610,11 @@ class ApiService {
           url: this.config.endpoints.auth.register,
           data,
         });
+        ToastService.showSuccess("Registration successful!");
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        // Error is already handled in makeRequest
+        throw error;
       }
     },
 
@@ -559,10 +628,11 @@ class ApiService {
 
         if (response?.api_token) {
           this.setToken(response.api_token);
+          ToastService.showSuccess("Login successful!");
         }
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -573,9 +643,10 @@ class ApiService {
           url: this.config.endpoints.auth.verifyEmail,
           data,
         });
+        ToastService.showSuccess("Email verified successfully!");
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -586,9 +657,10 @@ class ApiService {
           url: this.config.endpoints.auth.requestVerification,
           data: { email },
         });
+        ToastService.showSuccess("Verification email sent!");
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -599,9 +671,12 @@ class ApiService {
           url: this.config.endpoints.auth.passwordResetRequest,
           data: { email },
         });
+        ToastService.showSuccess(
+          "Password reset instructions sent to your email!"
+        );
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -612,50 +687,70 @@ class ApiService {
           url: this.config.endpoints.auth.passwordResetVerify,
           data,
         });
+        ToastService.showSuccess("Password reset successful!");
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
   };
 
   // Attributes Methods
   attributes = {
+    // getCountries: async () => {
+    //   try {
+    //     const response = await this.makeRequest({
+    //       method: "GET",
+    //       url: this.config.endpoints.attributes.countries,
+    //     });
+
+    //     // Validate the response against our schema
+    //     try {
+    //       const validatedResponse = CountriesResponseSchema.parse(response);
+    //       return validatedResponse.data;
+    //     } catch (validationError) {
+    //       // Handle validation errors
+    //       if (process.env.NODE_ENV !== "production") {
+    //         console.error(
+    //           "Invalid countries response format:",
+    //           validationError.errors
+    //         );
+    //       }
+
+    //       const validationApiError = new ApiError(
+    //         "Invalid response format",
+    //         500,
+    //         validationError.errors,
+    //         false,
+    //         "VALIDATION_ERROR",
+    //         validationError,
+    //         "We received unexpected data from the server. Please try again later."
+    //       );
+
+    //       ToastService.showError(validationApiError.userFriendlyMessage);
+    //       throw validationApiError;
+    //     }
+    //   } catch (error) {
+    //     throw error; // Already handled in makeRequest
+    //   }
+    // },
+
+
     getCountries: async () => {
-      try {
-        const response = await this.makeRequest({
-          method: "GET",
-          url: this.config.endpoints.attributes.countries,
-        });
+  try {
+    const response = await this.makeRequest({
+      method: "GET",
+      url: this.config.endpoints.attributes.countries,
+    });
+    
+    // Just return the data array directly
+    return response.data;
+  } catch (error) {
+    throw error; // Already handled in makeRequest
+  }
+} ,
 
-        // Validate the response against our schema
-        try {
-          const validatedResponse = CountriesResponseSchema.parse(response);
-          return validatedResponse.data;
-        } catch (validationError) {
-          // Handle validation errors
-          if (process.env.NODE_ENV !== "production") {
-            console.error(
-              "Invalid countries response format:",
-              validationError.errors
-            );
-          }
-
-          throw new ApiError(
-            "Invalid response format",
-            500,
-            validationError.errors,
-            false,
-            "VALIDATION_ERROR",
-            validationError,
-            "We received unexpected data from the server. Please try again later."
-          );
-        }
-      } catch (error) {
-        throw error; // Already formatted by makeRequest
-      }
-    },
-
+    
     getBanks: async (currency) => {
       try {
         const response = await this.makeRequest({
@@ -665,7 +760,7 @@ class ApiService {
         });
         return response?.data.banks || [];
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -677,7 +772,7 @@ class ApiService {
         });
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -689,7 +784,7 @@ class ApiService {
         });
         return response.data;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -702,7 +797,7 @@ class ApiService {
         });
         return response.data;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
   };
@@ -723,9 +818,10 @@ class ApiService {
             },
           },
         });
+        ToastService.showSuccess("Transaction created successfully!");
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -738,7 +834,7 @@ class ApiService {
         });
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -750,7 +846,7 @@ class ApiService {
         });
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
 
@@ -758,7 +854,7 @@ class ApiService {
     cancel: async (id) => {
       try {
         if (!id) {
-          throw new ApiError(
+          const validationError = new ApiError(
             "Transaction ID is required",
             400,
             null,
@@ -767,15 +863,19 @@ class ApiService {
             null,
             "Transaction ID is required to cancel a transaction"
           );
+
+          ToastService.showError(validationError.userFriendlyMessage);
+          throw validationError;
         }
 
         const response = await this.makeRequest({
           method: "POST",
           url: this.config.endpoints.transactions.cancel.replace(":id", id),
         });
+        ToastService.showSuccess("Transaction cancelled successfully!");
         return response;
       } catch (error) {
-        throw error; // Already formatted by makeRequest
+        throw error; // Already handled in makeRequest
       }
     },
   };
@@ -792,4 +892,10 @@ class ApiService {
 const apiService = new ApiService(API_CONFIG);
 
 export default apiService;
-export { API_CONFIG, ApiError, CountrySchema, CountriesResponseSchema };
+export {
+  API_CONFIG,
+  ApiError,
+  CountrySchema,
+  CountriesResponseSchema,
+  ToastService,
+};

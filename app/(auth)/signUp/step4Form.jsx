@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-const Step4Form = ({ onVerify, onResendCode, isLoading, error }) => {
+const Step4Form = ({ onVerify, onResendCode, isLoading, error, email }) => {
   const [otp, setOtp] = useState(new Array(6).fill(""));
 
   const handleChange = (element, index) => {
@@ -28,8 +28,11 @@ const Step4Form = ({ onVerify, onResendCode, isLoading, error }) => {
       <h2 className="text-2xl font-semibold mb-4 text-center">
         Verify your address
       </h2>
-      <p className="text-sm text-gray-600 mb-6 text-center">
-        Please enter the OTP sent to the email address you provided
+      <p className="text-sm text-gray-600 mb-2 text-center">
+        Please enter the OTP sent to:
+      </p>
+      <p className="text-sm font-medium text-blue-600 mb-6 text-center">
+        {email || "your email address"}
       </p>
 
       {error && (

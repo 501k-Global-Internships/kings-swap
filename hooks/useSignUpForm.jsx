@@ -7,6 +7,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useCountryStore } from "../stores/countries.store";
+import { ToastService } from "../config/config"; // Import ToastService from your config
 
 export const useSignUpForm = () => {
   const initialize = useCountryStore((state) => state.initialize);
@@ -37,6 +38,17 @@ export const useSignUpForm = () => {
     queryKey: ["fetch/countries"],
     queryFn: () => apiService.attributes.getCountries(),
     placeholderData: keepPreviousData,
+    useErrorBoundary: false,
+    onError: (error) => {
+      // Use ToastService instead of setting to state directly
+      ToastService.showError(
+        "Failed to fetch countries. Please try again later."
+      );
+      setErrors((prev) => ({
+        ...prev,
+        countriesError: "Failed to load countries",
+      }));
+    },
   });
 
   const { mutate: postStepDetails, isPending: postPending } = useMutation({
@@ -46,8 +58,12 @@ export const useSignUpForm = () => {
       setStep(4);
     },
     onError: (error) => {
-      console.log(error, "error post");
-      setErrors({ general: [error.message] });
+      // Use ToastService instead of logging and setting to state
+      const errorMessage = getFormattedErrorMessage(error);
+      ToastService.showError(errorMessage);
+      setErrors({
+        general: ["Registration failed. Please check your information."],
+      });
     },
   });
 
@@ -55,24 +71,50 @@ export const useSignUpForm = () => {
     mutationFn: (data) => apiService.auth.verifyEmail(data),
     onSuccess: () => {
       setVerificationComplete(true);
+      ToastService.showSuccess("Email verified successfully!");
     },
     onError: (error) => {
-      setErrors({ general: [error.message] });
+      // Use ToastService for verification errors
+      const errorMessage = getFormattedErrorMessage(error);
+      ToastService.showError(errorMessage);
+      setErrors({ general: ["Verification failed. Please try again."] });
     },
   });
 
   const { mutate: resendOTP, isPending: resending } = useMutation({
     mutationFn: (data) => apiService.auth.requestVerification(data),
+    onSuccess: () => {
+      ToastService.showSuccess("Verification code resent successfully!");
+    },
     onError: (error) => {
-      setErrors({ general: [error.message] });
+      // Use ToastService for resend errors
+      const errorMessage = getFormattedErrorMessage(error);
+      ToastService.showError(errorMessage);
+      setErrors({ general: ["Failed to resend verification code."] });
     },
   });
+
+  // Helper function to extract user-friendly error messages
+  const getFormattedErrorMessage = (error) => {
+    // If it's already an ApiError object with userFriendlyMessage
+    if (error.userFriendlyMessage) {
+      return error.userFriendlyMessage;
+    }
+
+    // Check if it's an API response with a message
+    if (error.data?.message) {
+      return error.data.message;
+    }
+
+    // Default generic message
+    return "Something went wrong. Please try again later.";
+  };
 
   useEffect(() => {
     if (countries && formData.country_id) {
       initialize(countries, formData.country_id);
     }
-  }, [countries, formData.country_id]);
+  }, [countries, formData.country_id, initialize]);
 
   const handleStep1 = (data) => {
     setFormData((prev) => ({ ...prev, ...data }));
@@ -85,6 +127,7 @@ export const useSignUpForm = () => {
   };
 
   const handleStep3 = async (passwordData) => {
+    setErrors({}); // Clear previous errors
     postStepDetails({
       ...formData,
       ...passwordData,
@@ -92,6 +135,7 @@ export const useSignUpForm = () => {
   };
 
   const handleStep4 = async (code) => {
+    setErrors({}); // Clear previous errors
     verifyEmail({
       email: formData.email,
       code,
@@ -99,6 +143,7 @@ export const useSignUpForm = () => {
   };
 
   const handleResendOTP = async () => {
+    setErrors({}); // Clear previous errors
     resendOTP(formData.email);
   };
 

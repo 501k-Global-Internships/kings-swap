@@ -115,7 +115,7 @@ export function TransactionCompletedStep() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white p-6 rounded-lg shadow-sm text-center">
+      <div className="bg-white p-4 rounded-lg shadow-sm text-center">
         {/* Status dependent title and content */}
         {transactionStatus === "processing" ||
         transactionStatus === "pending" ? (
@@ -128,7 +128,7 @@ export function TransactionCompletedStep() {
                 Your espees transaction is processing
               </p>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-[1rem] font-medium text-gray-600 mb-4">
               Please wait while we confirm your payment
             </p>
           </>
@@ -143,22 +143,22 @@ export function TransactionCompletedStep() {
         )}
 
         {/* Display transaction reference */}
-        <p className="text-gray-700 mb-4">
+        <p className="text-gray-700 font-medium mb-4">
           Reference:{" "}
           <span className="font-medium">{transactionDetails.reference}</span>
         </p>
 
         <Image
           src={Coin}
-          width={120}
-          height={120}
+          width={80}
+          height={80}
           alt="Espee Coin"
           className="mx-auto my-6"
         />
 
         {/* Transaction details */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <div className="grid grid-cols-2 gap-2 text-left">
+        <div className="p-4 mb-4">
+          <div className="grid grid-cols-2 gap-2 text-center mx-auto">
             <p className="text-gray-600">Amount:</p>
             <p className="font-medium">
               {transactionDetails.fiat_amount} {transactionDetails.currency}
@@ -194,21 +194,21 @@ export function TransactionCompletedStep() {
         </div>
       </div>
       <button
-        className="w-full bg-gray-800 text-white p-4 rounded-lg mt-4 mb-3"
+        className="w-full bg-[#363636] text-white p-4 rounded-lg mt-4 mb-3"
         onClick={() => router.push("/dashboard")}
       >
         Go to Dashboard
       </button>
       <button
         onClick={handleNewTransaction}
-        className="w-full bg-gray-100 p-4 rounded-lg"
+        className="w-full border border-[#363636] p-4 rounded-lg"
       >
         Make another transaction
       </button>
-      <div className="flex items-center justify-center mt-6 text-sm text-gray-600">
+      <button className="flex items-center justify-center mt-3 text-sm text-gray-600">
         <Image src={Info} width={16} height={16} alt="Info" className="mr-2" />
         <p>For any transaction issues please contact us via our email</p>
-      </div>
+      </button>
     </div>
   );
 }

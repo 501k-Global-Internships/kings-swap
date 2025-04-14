@@ -48,8 +48,8 @@ export function SwapExchangeLayout() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100">
       <BackgroundSection />
-      <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col items-center">
-        <div className="w-full max-w-md mb-9">
+      <div className="w-full md:w-1/2 sm:pt-4 md:p-12 flex flex-col items-center">
+        <div className="w-full max-w-md">
           <Image
             src={Logo}
             alt="Kings Swap Logo"
@@ -58,7 +58,7 @@ export function SwapExchangeLayout() {
             className="mb-4 ml-24"
           />
           <button
-            className="flex items-center cursor-pointer pt-6"
+            className="flex items-center cursor-pointer pb-2"
             onClick={handleBack}
           >
             <ArrowLeft className="mr-2" />

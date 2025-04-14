@@ -2,9 +2,7 @@
 import apiService from "@config/config";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import React from "react";
-import { useRouter } from "next/navigation";
 
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import Pagination from "../paginationComponent/Pagination";
 
 const TableHeader = () => (
@@ -60,7 +58,7 @@ const TransactionRow = ({ transaction }) => {
       </div>
       <div className="flex-1">{transaction.currency || "N/A"}</div>
       <div className={`flex-1 text-right ${statusColor}`}>
-        {status.toUpperCase()}
+        {status.toLowerCase()}
       </div>
     </div>
   );

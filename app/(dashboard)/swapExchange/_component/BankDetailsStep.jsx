@@ -190,7 +190,8 @@ export function BankDetailsStep() {
                   {...field}
                   type="text"
                   readOnly
-                  className="w-full p-3 border border-gray-300 rounded bg-gray-50"
+                  disabled
+                  className="w-full p-3 border border-gray-300 rounded bg-gray-50  cursor-not-allowed"
                   placeholder={
                     isResolvingAccount
                       ? "Verifying account..."

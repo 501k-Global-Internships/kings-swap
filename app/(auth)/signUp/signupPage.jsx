@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Alert, AlertDescription } from "../../../components/ui/alert";
@@ -123,6 +123,7 @@ const SignUpPage = () => {
                 onNext={handleStep1Complete}
                 countries={countries}
                 isLoading={isFetching}
+                initialCountry={formData.country_id}
               />
               <div className="mt-6 text-center w-full max-w-md">
                 <p className="text-sm text-[#7F7F7F] mb-2">
@@ -167,6 +168,7 @@ const SignUpPage = () => {
               onResendCode={handleResendCode}
               isLoading={resending || verifying}
               error={errors.general?.[0]}
+              email={formData.email}
             />
           )}
           {step === 4 && verificationComplete && (

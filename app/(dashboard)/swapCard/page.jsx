@@ -15,33 +15,6 @@ const SwapCard = () => {
   const [espeeAmount, setEspeeAmount] = useState("");
   const [localAmount, setLocalAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState("NGN");
-  // const [rates, setRates] = useState({});
-  // const [apiError, setApiError] = useState(null);
-
-  // useEffect(() => {
-  //   if (selectedCurrency) {
-  //     fetchExchangeRates();
-  //   }
-  // }, [selectedCurrency]);
-
-  // const fetchExchangeRates = async () => {
-  //   try {
-  //     setApiLoading(true);
-  //     setApiError(null);
-  //     const response = await apiService.attributes.getRates();
-
-  //       if (response?.success && response?.rates) {
-  //         setRates(response.rates);
-  //       } else {
-  //         throw new Error("Invalid response format");
-  //       }
-  //     } catch (error) {
-  //       console.error("Exchange rate error:", error);
-  //       setApiError("Failed to fetch exchange rates. Please try again.");
-  //     } finally {
-  //       setApiLoading(false);
-  //     }
-  //   };
 
   const {
     data: rates,
@@ -57,9 +30,7 @@ const SwapCard = () => {
 
   const {
     data: banks,
-    // isFetching,
-    // isPending,
-    // error,
+
   } = useQuery({
     queryKey: ["fetch/banks"],
     queryFn: () => apiService.attributes.getBanks("NGN"),
@@ -67,9 +38,6 @@ const SwapCard = () => {
   });
   const {
     data: currencies,
-    // isFetching,
-    // isPending,
-    // error,
   } = useQuery({
     queryKey: ["fetch/currencies"],
     queryFn: () => apiService.attributes.getCurrencies(),
@@ -105,30 +73,6 @@ const SwapCard = () => {
 
   const handleSwap = async () => {
     if (!isValidAmount) return;
-
-    // try {
-    //   setIsSwapping(true);
-    //   setApiError(null);
-
-    //   const response = await apiService.transactions.create({
-    //     espee_amount: parseFloat(espeeAmount),
-    //     currency: selectedCurrency,
-    //   });
-
-    //   if (response?.success) {
-    //     // Handle successful swap
-    //     console.log("Swap successful:", response);
-    //   } else {
-    //     throw new Error(response?.message || "Swap failed");
-    //   }
-    // } catch (error) {
-    //   console.error("Swap error:", error);
-    //   setApiError(
-    //     error.message || "Failed to complete swap. Please try again."
-    //   );
-    // } finally {
-    //   setIsSwapping(false);
-    // }
     router.push("/swapExchange");
   };
 
@@ -147,15 +91,35 @@ const SwapCard = () => {
 
         <div className="relative max-w-[200px]">
           <input
-            type="number"
+            type="text" // Changed from "number" to "text"
             value={espeeAmount}
-            onChange={handleAmountChange}
+            onChange={(e) => {
+              // Only allow digits and decimal point
+              const value = e.target.value;
+              // Regex to match only positive numbers with optional decimal places
+              if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                setEspeeAmount(value);
+
+                if (
+                  selectedCurrency &&
+                  rates &&
+                  rates.data.exchange_rates[selectedCurrency]
+                ) {
+                  const rate = rates.data.exchange_rates[selectedCurrency];
+                  const calculatedAmount = (
+                    parseFloat(value || 0) * rate
+                  ).toFixed(2);
+                  setLocalAmount(calculatedAmount);
+                  setIsValidAmount(parseFloat(value) > 0);
+                }
+              }
+            }}
             className="text-5xl font-bold w-full outline-none focus:ring-2 focus:ring-blue-500 rounded"
             placeholder="0.00"
             // disabled={apiLoading || isSwapping}
+            inputMode="decimal" // Better mobile keyboard for numbers
           />
         </div>
-
         <div className="flex items-center justify-between text-sm">
           <p className="text-gray-600">
             YOU WILL RECEIVE{" "}

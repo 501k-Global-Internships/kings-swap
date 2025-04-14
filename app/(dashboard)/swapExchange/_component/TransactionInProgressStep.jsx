@@ -13,13 +13,27 @@ export function TransactionInProgressStep() {
 
   // Calculate expiration time based on expires_at from the API
   const calculateTimeLeft = () => {
-    if (!transactionData.expires_at) return 600; // Default 10 minutes
+    // Check if we have a stored end time for this transaction
+    const storedEndTime = localStorage.getItem(
+      `transaction_end_${transactionData.id}`
+    );
 
-    const expiresAt = new Date(transactionData.expires_at);
-    const now = new Date();
-    const timeLeftInSeconds = Math.floor((expiresAt - now) / 1000);
+    if (storedEndTime) {
+      const timeRemaining = Math.floor(
+        (parseInt(storedEndTime) - Date.now()) / 1000
+      );
+      return timeRemaining > 0 ? timeRemaining : 0;
+    }
 
-    return timeLeftInSeconds > 0 ? timeLeftInSeconds : 0;
+    // Always set to 10 minutes (600 seconds) for new transactions
+    const endTime = Date.now() + 600 * 1000; // 10 minutes in milliseconds
+    if (transactionData.id) {
+      localStorage.setItem(
+        `transaction_end_${transactionData.id}`,
+        endTime.toString()
+      );
+    }
+    return 600; // 10 minutes in seconds
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
@@ -27,32 +41,56 @@ export function TransactionInProgressStep() {
   const [copied, setCopied] = useState({ reference: false, address: false });
 
   useEffect(() => {
-    let isMounted = true;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          if (isMounted) {
-            // Check transaction status before automatically moving to next step
+    // Store the transaction end time when the component first mounts
+    if (
+      transactionData.id &&
+      !localStorage.getItem(`transaction_end_${transactionData.id}`)
+    ) {
+      const endTime = Date.now() + 600 * 1000; // 10 minutes in milliseconds
+      localStorage.setItem(
+        `transaction_end_${transactionData.id}`,
+        endTime.toString()
+      );
+    }
+
+    // Use requestAnimationFrame for more accurate timing
+    let frameId;
+    let lastTime = Date.now();
+
+    const updateTimer = () => {
+      const now = Date.now();
+      if (transactionData.id) {
+        const storedEndTime = localStorage.getItem(
+          `transaction_end_${transactionData.id}`
+        );
+        if (storedEndTime) {
+          const timeRemaining = Math.floor(
+            (parseInt(storedEndTime) - now) / 1000
+          );
+          setTimeLeft(timeRemaining > 0 ? timeRemaining : 0);
+
+          if (timeRemaining <= 0) {
+            // Check transaction status when time expires
             checkTransactionStatus();
-            return 0;
+            return;
           }
-          return 0;
         }
-        return prev - 1;
-      });
-    }, 1000);
+      }
+
+      frameId = requestAnimationFrame(updateTimer);
+    };
+
+    updateTimer();
 
     // Check transaction status periodically
     const statusChecker = setInterval(() => {
       if (transactionData.id) {
         checkTransactionStatus();
       }
-    }, 15000); // Check every 15 seconds
+    }, 15000);
 
     return () => {
-      isMounted = false;
-      clearInterval(timer);
+      cancelAnimationFrame(frameId);
       clearInterval(statusChecker);
     };
   }, [transactionData.id]);
@@ -108,6 +146,9 @@ export function TransactionInProgressStep() {
       // Show success toast
       toast.success("Transaction cancelled successfully");
 
+      // Clear the stored end time
+      localStorage.removeItem(`transaction_end_${transactionData.id}`);
+
       // Reset transaction and go back to first step
       resetTransaction();
       setStep(1);
@@ -146,22 +187,22 @@ export function TransactionInProgressStep() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-        <p className="font-medium mb-2">
+      <div className="bg-white p-4 rounded-lg shadow-sm text-center">
+        <p className="font-medium mb-1 text-sm">
           YOU WILL RECEIVE {transactionData.fiat_amount?.toLocaleString() || 0}{" "}
           {transactionData.currency || "NGN"}
         </p>
-        <p className="mb-4">
+        <p className="mb-2 text-sm">
           TRANSFER {transactionData.espee_amount || 0} ESPEES TO
         </p>
 
         {/* Display transaction reference with improved styling */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <p className="text-gray-700 mb-2 font-semibold">
+        <div className="bg-gray-50 p-2 rounded-lg mb-2">
+          <p className="text-gray-700 mb-1 font-semibold text-xs">
             Reference (Required):
           </p>
           <div className="flex items-center justify-center">
-            <code className="bg-orange-50 text-orange-600 px-3 py-1 rounded-md font-medium text-lg mr-2">
+            <code className="bg-orange-50 text-orange-600 px-2 py-1 rounded-md font-medium text-sm mr-2">
               {transactionData.reference || "Processing..."}
             </code>
             <button
@@ -173,32 +214,32 @@ export function TransactionInProgressStep() {
               disabled={!transactionData.reference}
             >
               <div className="flex items-center">
-                <Image src={Copy} width={20} height={20} alt="Copy" />
+                <Image src={Copy} width={16} height={16} alt="Copy" />
                 {copied.reference && (
                   <span className="text-green-500 text-xs ml-1">Copied!</span>
                 )}
               </div>
             </button>
           </div>
-          <p className="text-xs text-gray-600 mt-2 font-medium">
+          <p className="text-xs text-gray-600 mt-1">
             Include this reference when making your Espees transfer
           </p>
         </div>
 
         {/* Display destination address with improved styling */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <p className="text-gray-700 mb-2 font-semibold">
+        <div className="bg-gray-50 p-2 rounded-lg mb-3">
+          <p className="text-gray-700 mb-1 font-semibold text-xs">
             Destination Address:
           </p>
           <div className="flex flex-col items-center">
-            <div className="bg-orange-50 p-2 rounded-md w-full mb-2">
-              <p className="text-orange-600 font-mono break-all text-sm">
+            <div className="bg-orange-50 p-1 rounded-md w-full mb-1">
+              <p className="text-orange-600 font-mono break-all text-xs">
                 {transactionData.payment?.destination_address ||
                   "Processing..."}
               </p>
             </div>
             <button
-              className="cursor-pointer bg-gray-200 px-3 py-1 rounded hover:bg-gray-300 transition-colors flex items-center"
+              className="cursor-pointer bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition-colors flex items-center"
               onClick={() =>
                 transactionData.payment?.destination_address &&
                 copyToClipboard(
@@ -210,31 +251,31 @@ export function TransactionInProgressStep() {
             >
               <Image
                 src={Copy}
-                width={16}
-                height={16}
+                width={12}
+                height={12}
                 alt="Copy"
                 className="mr-1"
               />
-              <span className="text-sm">
+              <span className="text-xs">
                 {copied.address ? "Copied!" : "Copy Address"}
               </span>
             </button>
           </div>
-          <p className="text-xs text-gray-600 mt-3">
+          <p className="text-xs text-gray-600 mt-1">
             Send Espees to this wallet address
           </p>
         </div>
 
         <Image
           src={Coin}
-          width={120}
-          height={120}
+          width={80}
+          height={80}
           alt="Espee Coin"
-          className="mx-auto my-6"
+          className="mx-auto my-3"
         />
 
-        <div className="bg-orange-50 p-3 rounded-lg mb-4">
-          <p className="text-orange-800">
+        <div className="bg-orange-50 p-2 rounded-lg mb-2">
+          <p className="text-orange-800 text-xs">
             You have{" "}
             <span className="text-orange-600 font-bold">
               {formatTime(timeLeft)}
@@ -243,13 +284,13 @@ export function TransactionInProgressStep() {
           </p>
         </div>
 
-        <div className="text-xs text-gray-500 mb-4">
+        <div className="text-xs text-gray-500 mb-2">
           Remember to include the reference in your transaction narration
         </div>
 
         {transactionData.status && (
           <div
-            className={`mt-2 p-2 rounded ${
+            className={`mt-1 p-1 rounded ${
               transactionData.status === "pending"
                 ? "bg-yellow-100 text-yellow-800"
                 : transactionData.status === "successful" ||
@@ -258,15 +299,14 @@ export function TransactionInProgressStep() {
                 : "bg-red-100 text-red-800"
             }`}
           >
-            <p className="font-medium">
+            <p className="font-medium text-xs">
               Status: {transactionData.status?.toUpperCase() || "PENDING"}
             </p>
           </div>
         )}
       </div>
-
       <button
-        className="w-full bg-green-600 text-white p-4 rounded-lg mt-4 mb-3 hover:bg-green-700 transition-colors font-medium"
+        className="w-full bg-green-600 text-white p-4 rounded-lg mt-2 mb-3 hover:bg-green-700 transition-colors font-medium"
         onClick={handleCompleteTransaction}
       >
         I have made the transaction
@@ -275,7 +315,7 @@ export function TransactionInProgressStep() {
       <button
         onClick={handleCancel}
         disabled={isCancelling}
-        className="w-full bg-red-500 text-white p-4 rounded-lg mt-2 flex items-center justify-center disabled:bg-red-300 hover:bg-red-600 transition-colors"
+        className="w-full bg-red-500 text-white p-4 rounded-lg flex items-center justify-center disabled:bg-red-300 hover:bg-red-600 transition-colors"
       >
         {isCancelling ? "Cancelling..." : "Cancel transaction"}
         <Image

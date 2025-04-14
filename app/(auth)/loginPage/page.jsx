@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Img from "@/assets/coin2.svg";
@@ -11,17 +11,108 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import apiService from "@config/config";
+import apiService, { ToastService } from "@config/config";
+
+// Timeout duration in milliseconds (e.g., 2 hours = 7200000 ms)
+const INACTIVITY_TIMEOUT = 2 * 60 * 60 * 1000;
 
 const LoginPage = () => {
   const router = useRouter();
   const {
     handleSubmit,
     register,
-    formState: { errors },
+    formState: { errors: formErrors },
   } = useForm();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+
+  // Check for session timeout on component mount
+  useEffect(() => {
+    const checkSessionTimeout = () => {
+      const lastActivity = localStorage.getItem("lastActivityTime");
+      const currentTime = new Date().getTime();
+
+      if (
+        lastActivity &&
+        currentTime - parseInt(lastActivity) > INACTIVITY_TIMEOUT
+      ) {
+        // Session has expired due to inactivity, clear user data and token
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("lastActivityTime");
+      }
+    };
+
+    checkSessionTimeout();
+  }, []);
+
+  // Setup activity tracking for the entire application
+  useEffect(() => {
+    // Function to update the last activity timestamp
+    const updateActivityTimestamp = () => {
+      localStorage.setItem("lastActivityTime", new Date().getTime().toString());
+    };
+
+    // Set up event listeners for user activity
+    const activityEvents = [
+      "mousedown",
+      "mousemove",
+      "keypress",
+      "scroll",
+      "touchstart",
+    ];
+
+    // Add event listeners
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, updateActivityTimestamp);
+    });
+
+    // Initial update
+    updateActivityTimestamp();
+
+    // Cleanup event listeners on component unmount
+    return () => {
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, updateActivityTimestamp);
+      });
+    };
+  }, []);
+
+  // Enhanced function to get user-friendly error message
+  const getUserFriendlyMessage = (error) => {
+    // If it's already a user-friendly message
+    if (error.userFriendlyMessage) {
+      return error.userFriendlyMessage;
+    }
+
+    // Check for specific authentication errors
+    if (error.status === 401) {
+      return "Invalid email or password. Please check your credentials and try again.";
+    }
+
+    if (error.status === 422) {
+      // Handle validation errors
+      if (error.data?.errors?.email) {
+        return `Email error: ${error.data.errors.email[0]}`;
+      }
+      if (error.data?.errors?.password) {
+        return `Password error: ${error.data.errors.password[0]}`;
+      }
+      return "Invalid login credentials. Please check your email and password.";
+    }
+
+    // Check if there's a message in the error data
+    if (error.data?.message) {
+      return error.data.message;
+    }
+
+    // Account locked scenario
+    if (error.status === 403 && error.data?.errors?.account_locked) {
+      return "Your account has been locked due to too many failed login attempts. Please reset your password or contact support.";
+    }
+
+    // Default message
+    return "Login failed. Please try again.";
+  };
 
   const { mutate: loginFunc, isPending: Signing } = useMutation({
     mutationFn: (data) => apiService.auth.login(data),
@@ -30,17 +121,25 @@ const LoginPage = () => {
       localStorage.setItem("token", data.api_token);
       localStorage.setItem("user", JSON.stringify(data.data));
 
+      // Set the initial activity timestamp
+      localStorage.setItem("lastActivityTime", new Date().getTime().toString());
+
       // Redirect to dashboard or home page
       router.push("/dashboard");
     },
     onError: (error) => {
-      setError({ general: [error.message] });
+      // Use enhanced getUserFriendlyMessage to display more specific errors
+      const friendlyMessage = getUserFriendlyMessage(error);
+      ToastService.showError(friendlyMessage);
     },
   });
 
-  const onSubmit = useCallback(async (data) => {
-    loginFunc(data);
-  }, []);
+  const onSubmit = useCallback(
+    async (data) => {
+      loginFunc(data);
+    },
+    [loginFunc]
+  );
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -75,11 +174,10 @@ const LoginPage = () => {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-lg shadow-md p-8 mb-4">
             <h2 className="text-2xl font-bold mb-6">Login your account</h2>
-            {(errors.length > 0 || error) && (
+            {/* Only show form validation errors here, not API errors */}
+            {Object.keys(formErrors).length > 0 && (
               <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-                {errors.email?.message ||
-                  errors.password?.message ||
-                  error.general}
+                {formErrors.email?.message || formErrors.password?.message}
               </div>
             )}
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -92,7 +190,13 @@ const LoginPage = () => {
                     type="email"
                     id="email"
                     name="email"
-                    {...register("email")}
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address",
+                      },
+                    })}
                     className="w-full px-3 py-2 border rounded"
                     placeholder="Enter your email address"
                   />
@@ -131,7 +235,9 @@ const LoginPage = () => {
                     type={showPassword ? "text" : "password"}
                     id="password"
                     name="password"
-                    {...register("password")}
+                    {...register("password", {
+                      required: "Password is required",
+                    })}
                     className="w-full px-3 py-2 border rounded"
                     placeholder="Enter your password"
                   />

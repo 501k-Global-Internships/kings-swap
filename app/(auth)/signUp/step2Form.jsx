@@ -267,8 +267,9 @@ const Step2Form = ({
               >
                 Gender
               </label>
+              <input type="hidden" {...register("gender")} />
               <button
-                name="gender"
+                type="button" // Add type="button" to prevent form submission
                 className={`w-full border ${
                   errors.gender || serverErrors?.gender
                     ? "border-red-500"
@@ -285,10 +286,15 @@ const Step2Form = ({
                 <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-b mt-[-1px]">
                   {["Male", "Female"].map((g, index) => (
                     <button
+                      type="button" 
                       key={index}
                       className="w-full p-2 hover:bg-gray-100 cursor-pointer text-sm"
                       onClick={() => {
-                        methods.setValue("gender", g);
+                        methods.setValue("gender", g, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        });
                         setIsGenderOpen(false);
                       }}
                     >
