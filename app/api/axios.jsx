@@ -1,7 +1,9 @@
-import axios from 'axios';
+import axios from "axios";
 
-const BASE_URL = "https://dev.cabinet.kingsswap.com.ng";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export default axios.create({
+const api = axios.create({
   baseURL: BASE_URL,
 });
+
+export default api;

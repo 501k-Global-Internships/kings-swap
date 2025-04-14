@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { z } from "zod";
-import toast from "react-hot-toast"; // Import toast library (you'll need to install this)
+import toast from "react-hot-toast";
 
 const RATE_LIMIT_CONFIG = {
   maxRetries: 3,
@@ -55,8 +55,7 @@ const ApiConfigSchema = z.object({
 
 // API Configuration
 const API_CONFIG = {
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL || "https://dev.cabinet.kingsswap.com.ng",
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 30000,
   endpoints: {
     auth: {
@@ -83,6 +82,7 @@ const API_CONFIG = {
     preflight: "/ping",
   },
 };
+
 
 // Create a Toast service for displaying errors
 const ToastService = {
