@@ -1,10 +1,8 @@
 import React from "react";
-import SignUpPage from "./signupPage";
-
-export const dynamic = "force-dynamic";
+import SignUpPageWithQueryClient from "./signupPage";
 
 const SignUpPageWrapper = () => {
-  return <SignUpPage />;
+  return <SignUpPageWithQueryClient />;
 };
 
 export default SignUpPageWrapper;
