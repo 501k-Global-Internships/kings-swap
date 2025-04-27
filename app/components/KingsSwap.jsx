@@ -6,22 +6,22 @@ const KingsSwap = () => {
       className="
         relative 
         w-full 
-        h-[200px]         /* Default height for mobile */
-        sm:h-[250px]      /* Small screens */
-        md:h-[300px]      /* Medium screens */
-        lg:h-[350px]      /* Large screens */
+        h-[200px]    
+        sm:h-[250px]      
+        md:h-[300px]    
+        lg:h-[350px]     
         bg-blue-600 
         bg-cover 
         bg-center 
         bg-no-repeat
         mx-auto
-        px-2              /* Minimal horizontal padding for mobile */
-        sm:px-3           /* Small screens */
-        md:px-4           /* Medium screens */
-        lg:px-6           /* Large screens */
-        py-2              /* Minimal vertical padding for mobile */
-        sm:py-3           /* Small screens */
-        md:py-4           /* Medium screens */
+        px-2            
+        sm:px-3         
+        md:px-4          
+        lg:px-6          
+        py-2            
+        sm:py-3           
+        md:py-4          
       "
       style={{
         backgroundImage: `url(${bgImage.src})`,

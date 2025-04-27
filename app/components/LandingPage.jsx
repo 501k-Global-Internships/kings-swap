@@ -1,3 +1,4 @@
+import CurrencySwapCard from "./CurrencySwapCard";
 import Footer from "./Footer";
 import GridImages from "./GridImages";
 import Hero from "./Hero";
@@ -9,6 +10,7 @@ const LandingPage = () => {
     <div className="min-h-screen">
       <Hero />
       <Swap />
+      <CurrencySwapCard />
       <GridImages />
       <KingsSwap />
       <Footer />

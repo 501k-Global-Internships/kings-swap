@@ -8,7 +8,7 @@ const Step1Form = ({ onNext, countries, isLoading, initialCountry = "NG" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState(null);
 
-  // Set the selected country based on the initialCountry prop
+
   useEffect(() => {
     if (countries?.length && initialCountry) {
       const country = countries.find((c) => c.id === initialCountry);

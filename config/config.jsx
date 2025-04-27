@@ -10,7 +10,7 @@ const RATE_LIMIT_CONFIG = {
   maxDelay: 10000,
 };
 
-// Validation schemas
+
 const CountrySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -53,7 +53,6 @@ const ApiConfigSchema = z.object({
   }),
 });
 
-// API Configuration
 const API_CONFIG = {
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 30000,
@@ -84,7 +83,7 @@ const API_CONFIG = {
 };
 
 
-// Create a Toast service for displaying errors
+
 const ToastService = {
   showError: (message) => {
     if (typeof window !== "undefined") {
@@ -127,7 +126,7 @@ class ApiError extends Error {
       return "Please check your internet connection and try again.";
     }
 
-    // Common error types with friendly messages
+
     const errorMessages = {
       NO_INTERNET: "Please check your internet connection and try again.",
       REQUEST_TIMEOUT:
@@ -163,7 +162,7 @@ class ApiError extends Error {
 
   static getErrorDetails(error) {
     if (error.response) {
-      // Server responded with error
+    
       return {
         message:
           error.response.data?.message ||
@@ -213,7 +212,7 @@ class ApiError extends Error {
       };
     }
 
-    // Something happened in setting up the request
+    
     return {
       message: error.message || "Request configuration error",
       status: -2,
@@ -229,7 +228,7 @@ class ApiError extends Error {
 class ApiService {
   constructor(config) {
     try {
-      // Validate config at runtime
+    
       ApiConfigSchema.parse(config);
       this.config = config;
       this.axios = this.createAxiosInstance();
@@ -261,7 +260,7 @@ class ApiService {
       window.addEventListener("offline", () => {
         this.networkStatus.online = false;
         this.networkStatus.lastCheck = Date.now();
-        // Show a toast when the network goes offline
+
         ToastService.showError(
           "You are currently offline. Please check your internet connection."
         );
@@ -272,10 +271,9 @@ class ApiService {
   }
 
   processRetryQueue() {
-    // Process any pending requests when coming back online
+
     if (this.retryQueue.size > 0 && this.networkStatus.online) {
-      // Implementation of retry queue processing
-      // This is a placeholder for a more robust implementation
+     
     }
   }
 
@@ -291,7 +289,7 @@ class ApiService {
     });
   }
 
-  // Enhanced token management with encryption
+  
   getStoredToken() {
     if (typeof window === "undefined") return null;
     try {
@@ -350,12 +348,10 @@ class ApiService {
 
     if (!originalRequest) {
       const formattedError = this.formatError(error);
-      // Display toast with user-friendly error message
       ToastService.showError(formattedError.userFriendlyMessage);
       return Promise.reject(formattedError);
     }
 
-    // Enhanced error logging - only log in development
     if (process.env.NODE_ENV !== "production") {
       console.log("API Error:", {
         url: originalRequest.url,
@@ -367,7 +363,7 @@ class ApiService {
       });
     }
 
-    // Handle token expiration
+ 
     if (error.response?.status === 401 && !originalRequest._retry) {
       return this.handleTokenExpiration(originalRequest);
     }
@@ -409,21 +405,18 @@ class ApiService {
       });
     }
 
-    // In production, you might want to send this to your error monitoring service
-    // but without exposing technical details to end users
     if (
       process.env.NODE_ENV === "production" &&
       typeof window !== "undefined"
     ) {
-      // Example: send to error monitoring service
-      // errorMonitoringService.captureError(error);
+      
     }
   }
 
   async handleRequest(config) {
-    // Check network status before sending request
+
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      // Instead of throwing an error, return a rejected promise with an ApiError
+
       return Promise.reject(
         new ApiError(
           "No internet connection",
@@ -445,7 +438,7 @@ class ApiService {
   }
 
   handleRequestError(error) {
-    // Don't expose internal errors to console in production
+
     if (process.env.NODE_ENV !== "production") {
       console.warn("Request Interceptor Error:", error);
     }
@@ -490,7 +483,7 @@ class ApiService {
         "Your session has expired. Please log in again."
       );
 
-      // Display toast for auth errors
+    
       ToastService.showError(authError.userFriendlyMessage);
 
       return Promise.reject(authError);
@@ -519,7 +512,6 @@ class ApiService {
   formatError(error) {
     const errorDetails = ApiError.getErrorDetails(error);
 
-    // Enhanced error message extraction from the response
     const userFriendlyMessage =
       errorDetails.data?.message ||
       errorDetails.data?.error?.message ||
@@ -565,7 +557,7 @@ class ApiService {
           "Please check your internet connection and try again."
         );
 
-        // Show toast for offline error
+      
         ToastService.showError(offlineError.userFriendlyMessage);
 
         // Return a rejected promise instead of throwing
@@ -582,8 +574,6 @@ class ApiService {
       // Log the error (but not in production to user console)
       this.logError(formattedError);
 
-      // Make sure we show a toast for any errors that reach this point
-      // that weren't handled by interceptors
       if (!error.config || !error.config._retry) {
         ToastService.showError(formattedError.userFriendlyMessage);
       }
@@ -613,7 +603,7 @@ class ApiService {
         ToastService.showSuccess("Registration successful!");
         return response;
       } catch (error) {
-        // Error is already handled in makeRequest
+      
         throw error;
       }
     },
@@ -632,7 +622,7 @@ class ApiService {
         }
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
 
@@ -646,7 +636,7 @@ class ApiService {
         ToastService.showSuccess("Email verified successfully!");
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
 
@@ -660,7 +650,7 @@ class ApiService {
         ToastService.showSuccess("Verification email sent!");
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
 
@@ -676,7 +666,7 @@ class ApiService {
         );
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
 
@@ -690,7 +680,7 @@ class ApiService {
         ToastService.showSuccess("Password reset successful!");
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
   };
@@ -802,7 +792,6 @@ class ApiService {
     },
   };
 
-  // Transaction Methods
   transactions = {
     create: async (data) => {
       try {
@@ -821,7 +810,7 @@ class ApiService {
         ToastService.showSuccess("Transaction created successfully!");
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error;
       }
     },
 
@@ -834,7 +823,7 @@ class ApiService {
         });
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
 
@@ -846,7 +835,7 @@ class ApiService {
         });
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
 
@@ -875,15 +864,14 @@ class ApiService {
         ToastService.showSuccess("Transaction cancelled successfully!");
         return response;
       } catch (error) {
-        throw error; // Already handled in makeRequest
+        throw error; 
       }
     },
   };
 
-  // Method to refresh authentication token
+ 
   async refreshToken() {
-    // Implement your token refresh logic here
-    // This is a placeholder
+    // Implement token refresh logic
     throw new Error("Token refresh not implemented");
   }
 }
