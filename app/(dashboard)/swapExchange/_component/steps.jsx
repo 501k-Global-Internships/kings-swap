@@ -1,10 +1,7 @@
-import { AmountSelectionStep } from "./AmountSelectionSteps";
-import { BankDetailsStep } from "./BankDetailsStep";
-import { TransactionInProgressStep } from "./TransactionInProgressStep";
-import { TransactionCompletedStep } from "./TransactionCompletedStep";
-export {
-  AmountSelectionStep,
-  BankDetailsStep,
-  TransactionInProgressStep,
-  TransactionCompletedStep,
-};
+import React from 'react'
+
+const steps = () => {
+  return <div>AmountSelectionStep</div>;
+}
+
+export default steps

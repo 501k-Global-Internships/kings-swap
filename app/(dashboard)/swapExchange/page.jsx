@@ -1,13 +1,7 @@
-import React from "react";
-import { SwapExchangeLayout } from "./_component/SwapExchangeLayout";
-import { ExchangeProvider } from "./_component/ExchangeContext";
+import React from 'react'
 
-const SwapExchange = () => {
-  return (
-    <ExchangeProvider>
-      <SwapExchangeLayout />
-    </ExchangeProvider>
-  );
-};
+const page = () => {
+  return <div>Exchange</div>;
+}
 
-export default SwapExchange;
+export default page
